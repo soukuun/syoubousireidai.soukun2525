@@ -3,25 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>すくば市消防本部 指令台システム - 世紀末互換版</title>
+    <title>すくば市消防本部 指令台システム - マルチ出動管理版</title>
     <style>
-        /* 最新ブラウザ用の基本設定 */
-        :root {
-            --bg-white: #ffffff;
-            --panel-gray: #f5f5f5;
-            --border-line: #bbbbbb;
-            --text-black: #000000;
-            --active-red: #ff3333;
-        }
-
-        * {
-            box-sizing: border-box;
-            -webkit-box-sizing: border-box;
-            -moz-box-sizing: border-box;
-        }
-
         body {
-            background-color: #f5f5f5; /* 95/XP用に直接カラー指定 */
+            background-color: #f5f5f5;
             font-family: "MS UI Gothic", "MS PGothic", -apple-system, BlinkMacSystemFont, sans-serif;
             margin: 0;
             padding: 8px;
@@ -30,7 +15,7 @@
             overflow: hidden;
         }
 
-        /* 95/XP（IE6）でも絶対に崩れない5列均等テーブル */
+        /* 5列均等テーブル */
         .grid-table {
             width: 100%;
             height: 42%;
@@ -39,7 +24,7 @@
             background-color: #ffffff;
             border: 2px solid #bbbbbb;
             margin-bottom: 8px;
-            table-layout: fixed; /* これで5列が完全均等になります */
+            table-layout: fixed;
         }
 
         .cell {
@@ -63,7 +48,7 @@
             font-size: 14px;
         }
 
-        /* 選択中の赤点滅（対応ブラウザのみ） */
+        /* 出動選択中の赤点滅 */
         .cell.active {
             background-color: #ff3333 !important;
             color: #ffffff !important;
@@ -80,7 +65,7 @@
             to { background-color: #a00000; }
         }
 
-        /* 下部エリア（古いIE用にテーブルレイアウトと併用） */
+        /* 下部エリア */
         .lower-container {
             height: 54%;
             display: flex;
@@ -124,9 +109,8 @@
             padding: 10px;
         }
 
-        /* 古いIEでも縦に並ぶように調整 */
         .form-row {
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             overflow: hidden;
         }
 
@@ -165,8 +149,8 @@
             font-size: 11px;
             color: #777777;
             font-weight: bold;
-            margin-top: 5px;
-            margin-bottom: 5px;
+            margin-top: 2px;
+            margin-bottom: 4px;
             clear: both;
         }
 
@@ -175,15 +159,35 @@
             text-decoration: none;
         }
 
+        /* 司令停止ボタンと出動決定ボタンの並び用 */
+        .btn-container {
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .btn-stop {
+            background-color: #ffe6e6;
+            color: #cc0000;
+            border: 4px solid #cc0000;
+            width: 35%;
+            height: 65px;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            float: left;
+            margin-right: 3%;
+        }
+
         .btn-dispatch {
             background-color: #ffffff;
             color: #000000;
             border: 4px solid #666666;
-            width: 100%;
-            height: 70px;
-            font-size: 28px;
+            width: 62%;
+            height: 65px;
+            font-size: 26px;
             font-weight: bold;
             cursor: pointer;
+            float: left;
         }
     </style>
 </head>
@@ -193,8 +197,7 @@
 <audio id="snd-kyukyu" src="kyukyu.mp3" preload="auto"></audio>
 <audio id="snd-kasai" src="kasaisirei.mp3" preload="auto"></audio>
 
-<table class="grid-table" id="grid-table">
-    </table>
+<table class="grid-table" id="grid-table"></table>
 
 <div class="lower-container">
     <div class="map-area">
@@ -261,12 +264,14 @@
             指令音素材提供：<a href="https://pocket-se.info/" target="_blank">ポケットサウンド/効果音素材</a>
         </div>
 
-        <button class="btn-dispatch" onclick="startDispatch()">出動決定</button>
+        <div class="btn-container">
+            <button class="btn-stop" onclick="stopDispatchPrompt()">司令停止</button>
+            <button class="btn-dispatch" onclick="startDispatch()">出動決定</button>
+        </div>
     </div>
 </div>
 
 <script>
-    // Windows 95/XPのIEでも100%エラーを吐かない古代のJavaScript表記（varとfunctionのみ）
     var data = [
         {
             station: "中央署",
@@ -278,22 +283,28 @@
         }
     ];
 
+    // 出動情報を記憶するグローバル変数（95/XP対応のため古代のオブジェクト配列構造）
+    var dispatchCount = 0; // 全体の通算出動命令カウント
+    var activeDispatches = {}; // 現在出動中の事案データストレージ
+    
+    // 事案番号に応じた色定義
+    var colorList = [
+        '#0044cc', // 1回目：青
+        '#008800', // 2回目：緑
+        '#ff6600', // 3回目：オレンジ
+        '#ddcc00'  // 4回目：黄色
+    ];
+
     var table = document.getElementById('grid-table');
     
-    // データから1行5マスのテーブル行を生成
+    // テーブルの生成
     for (var g = 0; g < data.length; g++) {
         var group = data[g];
         var allCells = [];
-        
-        // 署名を追加
         allCells.push({ text: group.station, isStation: true });
-        
-        // 車両を追加
         for (var u = 0; u < group.units.length; u++) {
             allCells.push({ text: group.units[u], isStation: false });
         }
-        
-        // 5列の倍数になるように空セルを追加
         var fill = 5 - (allCells.length % 5);
         if (fill < 5 && fill > 0) {
             for (var f = 0; f < fill; f++) {
@@ -301,15 +312,12 @@
             }
         }
         
-        // 実際にテーブルのtr、tdを組み立てる
         var currentRow;
         for (var i = 0; i < allCells.length; i++) {
             if (i % 5 === 0) {
                 currentRow = table.insertRow(-1);
-                // IE6用に高さを均等にするための計算
                 currentRow.style.height = "50px";
             }
-            
             var cellData = allCells[i];
             var td = currentRow.insertCell(-1);
             td.className = "cell";
@@ -322,29 +330,23 @@
                 td.style.border = "1px dashed #eee";
                 td.style.cursor = "default";
             } else {
-                // 車両クリック時の処理（古代ブラウザ対応版）
                 td.onclick = (function(targetTd) {
                     return function() {
                         if (window.speechSynthesis) window.speechSynthesis.cancel();
-                        
-                        // 効果音空再生ロック解除（対応環境用）
                         try {
                             document.getElementById('snd-sirei').play().catch(function(){});
                             document.getElementById('snd-sirei').pause();
                         } catch(e) {}
                         
-                        // 青色（出動中）なら白に戻す
-                        if (targetTd.style.backgroundColor === 'rgb(0, 68, 204)' || targetTd.style.backgroundColor === '#0044cc') {
-                            targetTd.style.backgroundColor = '#ffffff';
-                            targetTd.style.color = '#000000';
+                        // すでに出動中（色の属性がついている）なら何もしない（停止ボタンから一括帰署させるため）
+                        if (targetTd.getAttribute('data-dispatch-id')) {
+                            return;
+                        }
+                        
+                        if (targetTd.className.indexOf('active') !== -1) {
                             targetTd.className = "cell";
                         } else {
-                            // 通常時は選択（赤）の切り替え
-                            if (targetTd.className.indexOf('active') !== -1) {
-                                targetTd.className = "cell";
-                            } else {
-                                targetTd.className = "cell active";
-                            }
+                            targetTd.className = "cell active";
                         }
                     };
                 })(td);
@@ -363,7 +365,6 @@
     }
 
     function startDispatch() {
-        // 選択された「active」マスの取得（古いブラウザでも回るループ処理）
         var allTds = table.getElementsByTagName('td');
         var selectedElements = [];
         var selectedUnits = [];
@@ -377,6 +378,10 @@
         
         if (selectedUnits.length === 0) return;
 
+        dispatchCount++; // 出動カウントを1進める（1からスタート）
+        var colorIndex = (dispatchCount - 1) % 4; // 1~4回目で色ループ
+        var dispatchColor = colorList[colorIndex];
+
         var cmd = document.getElementById('cmdType').value;
         var town = document.getElementById('townName').value;
         var block = document.getElementById('blockNum').value;
@@ -386,11 +391,17 @@
         var address = "すくば市、" + town + "、" + block + near;
         var speechText = cmd + "。" + address + "。" + free + "。出動部隊、" + selectedUnits.join("、") + "。以上。";
 
+        // この事案のデータを保存（帰署キャンセル用）
+        var cleanCmdName = cmd.replace("司令", ""); // 「火災」「救急」にする
+        activeDispatches[dispatchCount] = {
+            label: cleanCmdName + dispatchCount + "回目 (" + selectedUnits.join(",") + ")",
+            elements: selectedElements
+        };
+
         var audioSirei = document.getElementById('snd-sirei');
         var audioKyukyu = document.getElementById('snd-kyukyu');
         var audioKasai = document.getElementById('snd-kasai');
         
-        // 音声リセット（古いブラウザでのエラー回避付き）
         try {
             audioSirei.pause(); audioSirei.currentTime = 0;
             audioKyukyu.pause(); audioKyukyu.currentTime = 0;
@@ -406,7 +417,6 @@
             activeAudio = audioKasai;
         }
 
-        // 音声再生＆アナウンス（現代ブラウザ用処理）
         try {
             activeAudio.play().then(function() {
                 activeAudio.onended = function() {
@@ -416,16 +426,16 @@
                 playSpeech(speechText);
             });
         } catch(e) {
-            // 95/XPのIEなどでplay()が動かない場合はそのままスルー
             playSpeech(speechText);
         }
 
-        // 出動した車両を「青色」に染める
+        // 部隊を事案ごとの指定色に染める
         for (var s = 0; s < selectedElements.length; s++) {
             var el = selectedElements[s];
-            el.className = "cell"; // activeクラスを解除
-            el.style.backgroundColor = '#0044cc';
+            el.className = "cell"; 
+            el.style.backgroundColor = dispatchColor;
             el.style.color = '#ffffff';
+            el.setAttribute('data-dispatch-id', dispatchCount); // 何回目の出動かマーキング
         }
     }
 
@@ -435,6 +445,52 @@
             uttr.lang = 'ja-JP';
             uttr.rate = 1.25;
             window.speechSynthesis.speak(uttr);
+        }
+    }
+
+    // 【新機能】司令停止（帰署確認）プロンプト処理
+    function stopDispatchPrompt() {
+        var keys = [];
+        for (var k in activeDispatches) {
+            if (activeDispatches.hasOwnProperty(k)) {
+                keys.push(k);
+            }
+        }
+
+        if (keys.length === 0) {
+            alert("現在、出動中の部隊はありません。");
+            return;
+        }
+
+        // 選択肢のメッセージを組み立てる
+        var message = "何回目の出動を停止させますか？\n現在出動中の事案一覧：\n\n";
+        for (var i = 0; i < keys.length; i++) {
+            var id = keys[i];
+            message += "[" + id + "] " + activeDispatches[id].label + "\n";
+        }
+        message += "\n停止させたい事案の【番号のみ】を入力してください。";
+
+        var inputId = prompt(message, "");
+        
+        if (inputId === null || inputId === "") return; // キャンセルされた場合
+
+        // 入力された番号の事案が存在するかチェック
+        if (activeDispatches[inputId]) {
+            var elementsToReset = activeDispatches[inputId].elements;
+            
+            // 対象部隊をすべて通常（白）に戻す
+            for (var r = 0; r < elementsToReset.length; r++) {
+                var el = elementsToReset[r];
+                el.style.backgroundColor = '#ffffff';
+                el.style.color = '#000000';
+                el.removeAttribute('data-dispatch-id');
+            }
+            
+            // 管理リストから削除
+            delete activeDispatches[inputId];
+            alert(inputId + "回目の出動部隊の帰署を確認。運用表示盤を通常に戻しました。");
+        } else {
+            alert("入力された事案番号が見つかりません。正しい半角数字を入力してください。");
         }
     }
 </script>
