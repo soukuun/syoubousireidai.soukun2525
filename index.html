@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>すくば市消防本部 指令台システム - フルモニター版</title>
+    <title>すくば市消防本部 指令台システム - タイマー連動版</title>
     <style>
         body {
             background-color: #f5f5f5;
@@ -147,7 +147,6 @@
             width: 100%;
         }
 
-        /* 📝 クレジットエリアのデザイン微調整 */
         .credit-area {
             text-align: right;
             font-size: 11px;
@@ -228,7 +227,7 @@
         .btn-quick.fire { background-color: #ffcccc; color: #cc0000; border-color: #cc0000; }
         .btn-quick.ambulance { background-color: #e6f2ff; color: #0044cc; border-color: #0044cc; }
 
-        /* 電光掲示板風 出動部隊モニター */
+        /* タイマー連動・電光掲示板モニター */
         .monitor-screen {
             background-color: #111111;
             border: 2px solid #333333;
@@ -241,8 +240,29 @@
             font-size: 12px;
             font-weight: bold;
             color: #00ff00; 
-            margin-bottom: 2px;
+            margin-bottom: 4px;
             border-bottom: 1px solid #222222;
+            overflow: hidden;
+            line-height: 20px;
+        }
+        
+        /* モニター内の現着ボタン */
+        .btn-arrived {
+            float: right;
+            background-color: #333333;
+            color: #ffff00;
+            border: 1px solid #ffff00;
+            font-size: 10px;
+            font-weight: bold;
+            padding: 0px 5px;
+            cursor: pointer;
+            height: 18px;
+            line-height: 16px;
+            margin-left: 5px;
+        }
+        .btn-arrived:hover {
+            background-color: #ffff00;
+            color: #000000;
         }
 
         /* サーバダウン画面 */
@@ -377,7 +397,7 @@
                 <button class="btn-quick" onclick="quickSetAccident('災害司令', '突風による電柱倒壊、道路閉塞の模様')">🌀 災害警戒</button>
             </div>
             
-            <div class="quick-accident-title">▶ すくば情報盤：運用中事案モニター</div>
+            <div class="quick-accident-title">▶ すくば情報盤：運用中事案モニター（デジタルタイマー連動）</div>
             <div class="monitor-screen" id="dispatch-monitor">
                 <div class="monitor-row" style="color: #666;">[状況] 現在、待機中の部隊はすべて正常運用です。</div>
             </div>
@@ -419,6 +439,9 @@
     var currentAnswer = 0;
     var requiredCorrectCount = 0;
     var currentCorrectCount = 0;
+
+    // タイマー動作用のインターバルID
+    var timerIntervalId = null;
 
     for (var g = 0; g < data.length; g++) {
         var group = data[g];
@@ -479,6 +502,45 @@
         document.getElementById('nearBy').value = "付近";
     }
 
+    // ⏱️ 秒数を「〇〇分〇〇秒」の形に変換するヘルパー関数
+    function formatTime(seconds) {
+        var m = Math.floor(seconds / 60);
+        var s = seconds % 60;
+        return (m < 10 ? "0" + m : m) + "分" + (s < 10 ? "0" + s : s) + "秒";
+    }
+
+    // 現場到着ボタンが押された時の処理
+    function setUnitArrived(id) {
+        if (activeDispatches[id]) {
+            activeDispatches[id].isArrived = true;
+            updateMonitorDisplay();
+        }
+    }
+
+    // ⏱️ 1秒ごとにすべての稼働中タイマーを進める関数
+    function startGlobalTimerLoop() {
+        if (timerIntervalId !== null) return;
+        timerIntervalId = setInterval(function() {
+            var hasActiveTimers = false;
+            for (var id in activeDispatches) {
+                if (activeDispatches.hasOwnProperty(id)) {
+                    // まだ到着していなければ秒数を進める
+                    if (!activeDispatches[id].isArrived) {
+                        activeDispatches[id].seconds++;
+                    }
+                    hasActiveTimers = true;
+                }
+            }
+            if (hasActiveTimers) {
+                updateMonitorDisplay();
+            } else {
+                clearInterval(timerIntervalId);
+                timerIntervalId = null;
+            }
+        }, 1000);
+    }
+
+    // モニター表示を新しく書き換える関数
     function updateMonitorDisplay() {
         var mScreen = document.getElementById('dispatch-monitor');
         var html = "";
@@ -487,7 +549,21 @@
         for (var id in activeDispatches) {
             if (activeDispatches.hasOwnProperty(id)) {
                 hasActive = true;
-                html += "<div class='monitor-row'>▶ 【事案" + id + "】" + activeDispatches[id].label + " ＝ 現在交信・出動中</div>";
+                var item = activeDispatches[id];
+                var timeStr = formatTime(item.seconds);
+
+                if (item.isArrived) {
+                    // 現場到着済みのスタイル（赤色表示に変化）
+                    html += "<div class='monitor-row' style='color: #ff3333;'>";
+                    html += "🚨 【現着】事案" + id + "：" + item.label + " ＝ ⚡ " + timeStr + "で現場到着・活動中";
+                    html += "</div>";
+                } else {
+                    // 現在出向・出動中のスタイル（黄緑色でタイマー進行）
+                    html += "<div class='monitor-row'>";
+                    html += "<button class='btn-arrived' onclick='setUnitArrived(" + id + ")'>現着報告</button>";
+                    html += "▶ 【出動】事案" + id + "：" + item.label + " ＝ ⏱️ 経過 " + timeStr;
+                    html += "</div>";
+                }
             }
         }
 
@@ -597,12 +673,17 @@
         var speechText = cmd + "。" + address + "。" + free + "。出動部隊、" + unitsPhrase + "。以上。";
 
         var cleanCmdName = cmd.replace("司令", ""); 
+        
+        // ⏱️ タイマー用に「seconds: 0」と「isArrived: false」のデータを追加！
         activeDispatches[dispatchCount] = {
-            label: cleanCmdName + " 第" + dispatchCount + "報 [" + town + "] (" + selectedUnits.join(",") + ")",
-            elements: selectedElements
+            label: cleanCmdName + "[" + town + "] (" + selectedUnits.join(",") + ")",
+            elements: selectedElements,
+            seconds: 0,
+            isArrived: false
         };
 
         updateMonitorDisplay();
+        startGlobalTimerLoop(); // タイマーのカウントを開始
 
         var audioSirei = document.getElementById('snd-sirei');
         var audioKyukyu = document.getElementById('snd-kyukyu');
