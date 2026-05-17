@@ -3,792 +3,204 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>すくば市消防本部 指令台システム - タイマー連動版</title>
+    <title>すくば市消防本部 指令台システム - アップデータ内蔵版</title>
     <style>
-        body {
-            background-color: #f5f5f5;
-            font-family: "MS UI Gothic", "MS PGothic", -apple-system, BlinkMacSystemFont, sans-serif;
-            margin: 0;
-            padding: 8px;
-            height: 100vh;
-            color: #000000;
-            overflow: hidden;
-            position: relative;
+        body { background-color: #f5f5f5; font-family: "MS UI Gothic", sans-serif; margin: 0; padding: 8px; height: 100vh; overflow: hidden; }
+        #main-wrapper { width: 100%; height: 100%; }
+        #update-panel {
+            position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.85); 
+            padding: 10px; border: 2px solid #ff3333; z-index: 100000; color: white; display: none;
+            width: 300px; box-shadow: 0 0 10px rgba(0,0,0,0.5);
         }
-
-        /* 5列均等テーブル */
-        .grid-table {
-            width: 100%;
-            height: 42%;
-            border-collapse: separate;
-            border-spacing: 3px;
-            background-color: #ffffff;
-            border: 2px solid #bbbbbb;
-            margin-bottom: 8px;
-            table-layout: fixed;
-        }
-
-        .cell {
-            background-color: #ffffff;
-            color: #000000;
-            border: 1px solid #cccccc;
-            text-align: center;
-            vertical-align: middle;
-            cursor: pointer;
-            font-size: 11px; 
-            font-weight: bold;
-            padding: 4px;
-            word-break: break-all;
-        }
-
-        .cell-station {
-            background-color: #e0e0e0;
-            color: #000000;
-            cursor: default;
-            border: 1px solid #999999;
-            font-size: 13px;
-        }
-
-        .cell.active {
-            background-color: #ff3333 !important;
-            color: #ffffff !important;
-            animation: blinkEffect 0.5s infinite alternate;
-            -webkit-animation: blinkEffect 0.5s infinite alternate;
-        }
-
-        @keyframes blinkEffect {
-            from { background-color: #ff3333; }
-            to { background-color: #a00000; }
-        }
-        @-webkit-keyframes blinkEffect {
-            from { background-color: #ff3333; }
-            to { background-color: #a00000; }
-        }
-
-        /* 下部エリア */
-        .lower-container {
-            height: 54%;
-            display: flex;
-            display: -webkit-flex;
-            gap: 8px;
-        }
-
-        .map-area {
-            width: 35%;
-            background-color: #e0e0e0;
-            border: 2px solid #bbbbbb;
-            position: relative;
-            overflow: hidden;
-            text-align: center;
-        }
-        
-        .map-img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            background-color: #ccc;
-        }
-        
-        .map-controls {
-            position: absolute;
-            bottom: 5px;
-            left: 5px;
-            background: #ffffff;
-            padding: 4px 8px;
-            border: 1px solid #999;
-            font-size: 11px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        .controls-panel {
-            width: 65%;
-            flex-grow: 1;
-            background-color: #ffffff;
-            border: 2px solid #bbbbbb;
-            padding: 10px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-
-        .form-row {
-            margin-bottom: 5px;
-            overflow: hidden;
-        }
-
-        .setting-item {
-            float: left;
-            width: 48%;
-            margin-right: 2%;
-        }
-
-        .setting-item.wide {
-            width: 100%;
-            float: none;
-            clear: both;
-        }
-
-        .label-text {
-            font-size: 13px;
-            font-weight: bold;
-            color: #333;
-            display: block;
-            margin-bottom: 2px;
-        }
-
-        select, input {
-            padding: 5px;
-            font-size: 13px;
-            font-weight: bold;
-            border: 2px solid #bbbbbb;
-            background: white;
-            color: #000000;
-            width: 100%;
-        }
-
-        .credit-area {
-            text-align: right;
-            font-size: 11px;
-            color: #555555;
-            font-weight: bold;
-            margin-top: 1px;
-            margin-bottom: 3px;
-            clear: both;
-        }
-
-        .credit-area a {
-            color: #0066cc;
-            text-decoration: none;
-        }
-
-        .btn-container {
-            width: 100%;
-            overflow: hidden;
-            margin-bottom: 6px;
-        }
-
-        .btn-stop {
-            background-color: #ffe6e6;
-            color: #cc0000;
-            border: 3px solid #cc0000;
-            width: 35%;
-            height: 48px;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-            float: left;
-            margin-right: 3%;
-        }
-
-        .btn-dispatch {
-            background-color: #ffffff;
-            color: #000000;
-            border: 3px solid #666666;
-            width: 62%;
-            height: 48px;
-            font-size: 22px;
-            font-weight: bold;
-            cursor: pointer;
-            float: left;
-        }
-
-        /* 下半身のカスタムエリア */
-        .bottom-sub-panel {
-            border-top: 2px dashed #999999;
-            padding-top: 6px;
-            margin-top: 4px;
-            overflow: hidden;
-        }
-
-        /* 予告一発ボタン */
-        .quick-accident-title {
-            font-size: 12px;
-            font-weight: bold;
-            color: #555555;
-            margin-bottom: 4px;
-        }
-        .quick-btn-row {
-            overflow: hidden;
-            margin-bottom: 6px;
-        }
-        .btn-quick {
-            float: left;
-            width: 23%;
-            margin-right: 2%;
-            height: 28px;
-            font-size: 11px;
-            font-weight: bold;
-            cursor: pointer;
-            background-color: #f0f0f0;
-            border: 1px solid #777777;
-            color: #000000;
-        }
-        .btn-quick.fire { background-color: #ffcccc; color: #cc0000; border-color: #cc0000; }
-        .btn-quick.ambulance { background-color: #e6f2ff; color: #0044cc; border-color: #0044cc; }
-
-        /* タイマー連動・電光掲示板モニター */
-        .monitor-screen {
-            background-color: #111111;
-            border: 2px solid #333333;
-            height: 62px;
-            padding: 4px;
-            overflow-y: auto;
-            font-family: monospace;
-        }
-        .monitor-row {
-            font-size: 12px;
-            font-weight: bold;
-            color: #00ff00; 
-            margin-bottom: 4px;
-            border-bottom: 1px solid #222222;
-            overflow: hidden;
-            line-height: 20px;
-        }
-        
-        /* モニター内の現着ボタン */
-        .btn-arrived {
-            float: right;
-            background-color: #333333;
-            color: #ffff00;
-            border: 1px solid #ffff00;
-            font-size: 10px;
-            font-weight: bold;
-            padding: 0px 5px;
-            cursor: pointer;
-            height: 18px;
-            line-height: 16px;
-            margin-left: 5px;
-        }
-        .btn-arrived:hover {
-            background-color: #ffff00;
-            color: #000000;
-        }
-
-        /* サーバダウン画面 */
-        .server-down-screen {
-            display: none; 
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: #000000; 
-            color: #ff3333;            
-            z-index: 99999;            
-            text-align: center;
-            padding-top: 10%;
-        }
-        .server-down-msg {
-            font-size: 32px;
-            font-weight: bold;
-            margin-bottom: 20px;
-            animation: textBlink 0.6s infinite alternate;
-        }
-        @keyframes textBlink { from { opacity: 1.0; } to { opacity: 0.3; } }
-        .puzzle-box { background-color: #111111; border: 2px solid #ff3333; width: 320px; margin: 0 auto; padding: 15px; color: #ffffff; }
-        .puzzle-question { font-size: 26px; font-weight: bold; color: #ffff00; margin-bottom: 10px; }
-        .puzzle-status { font-size: 14px; color: #ff9999; margin-bottom: 10px; }
-        .puzzle-input { width: 120px; font-size: 20px; text-align: center; background: #222; color: #fff; border: 2px solid #555; padding: 4px; }
-        .btn-puzzle-submit { padding: 6px 15px; font-size: 16px; font-weight: bold; background-color: #ff3333; color: #000000; border: none; cursor: pointer; margin-left: 5px; }
-        .btn-reboot { margin-top: 25px; padding: 12px 25px; font-size: 18px; font-weight: bold; background-color: #333333; color: #ffffff; border: 2px solid #ff3333; cursor: pointer; }
+        #update-panel textarea { width: 100%; height: 150px; background: #222; color: #00ff00; font-family: monospace; font-size: 10px; }
+        #toggle-update-btn { position: absolute; top: 5px; right: 5px; z-index: 100001; font-size: 10px; background: #e1e1e1; border: 1px solid #999; cursor: pointer; padding: 2px 5px; }
     </style>
 </head>
 <body>
 
-<div id="system-down-overlay" class="server-down-screen">
-    <div id="down-message-text" class="server-down-msg">🚨司令システムダウン、再起動してください🚨</div>
-    <div class="puzzle-box">
-        <div style="font-size: 14px; font-weight: bold; margin-bottom: 5px;">【緊急復旧バイパス接続演算】</div>
-        <div id="puzzle-status-text" class="puzzle-status">残り正解数: 3回</div>
-        <div id="puzzle-q-display" class="puzzle-question">3 × 2 = ?</div>
-        <form onsubmit="checkPuzzleAnswer(); return false;" style="margin:0; padding:0;">
-            <input type="text" id="puzzle-ans-input" class="puzzle-input" autocomplete="off">
-            <button type="button" class="btn-puzzle-submit" onclick="checkPuzzleAnswer()">送信</button>
-        </form>
-    </div>
-    <button class="btn-reboot" id="reboot-main-btn" onclick="rebootSystem()" style="display:none;">システムを復旧・再起動</button>
+<button id="toggle-update-btn" onclick="toggleUpdatePanel()">⚙️ コード更新画面を開く</button>
+
+<div id="update-panel">
+    <div style="font-size:12px; font-weight:bold; margin-bottom:5px;">🤖 AIが作った最新コードをここに貼り付け</div>
+    <textarea id="code-input" placeholder="ここに新しいHTMLを全部貼り付けてください..."></textarea>
+    <button onclick="applyNewCode()" style="margin-top:5px; width:100%; background:#ff3333; color:white; font-weight:bold; padding:5px; cursor:pointer;">システム更新（アップデート）</button>
 </div>
 
+<iframe id="app-frame" style="width:100%; height:100%; border:none;"></iframe>
+
+<script>
+    // 初回起動時は、下に書いてある最新版の画面を自動で読み込みます
+    window.onload = function() {
+        var baseCode = document.getElementById('initial-code').textContent;
+        updateFrame(baseCode);
+    };
+
+    function toggleUpdatePanel() {
+        var panel = document.getElementById('update-panel');
+        panel.style.display = (panel.style.display === 'block') ? 'none' : 'block';
+    }
+
+    function applyNewCode() {
+        var newCode = document.getElementById('code-input').value;
+        if(!newCode.trim()) { alert("コードが入力されていません"); return; }
+        updateFrame(newCode);
+        document.getElementById('code-input').value = "";
+        toggleUpdatePanel();
+    }
+
+    function updateFrame(htmlContent) {
+        var frame = document.getElementById('app-frame');
+        var dst = frame.contentDocument || frame.contentWindow.document;
+        dst.open();
+        dst.write(htmlContent);
+        dst.close();
+    }
+</script>
+
+<script type="text/plain" id="initial-code">
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { background-color: #f5f5f5; font-family: "MS UI Gothic", sans-serif; margin: 0; padding: 8px; height: 100vh; color: #000; overflow: hidden; }
+        .grid-table { width: 100%; height: 36%; border-collapse: separate; border-spacing: 3px; background-color: #fff; border: 2px solid #bbb; margin-bottom: 6px; table-layout: fixed; }
+        .cell { background-color: #fff; color: #000; border: 1px solid #ccc; text-align: center; vertical-align: middle; cursor: pointer; font-size: 10px; font-weight: bold; padding: 4px; word-break: break-all; }
+        .cell-station { background-color: #e0e0e0; color: #000; cursor: default; border: 1px solid #999; font-size: 12px; }
+        .cell.active { background-color: #ff3333 !important; color: #fff !important; animation: blinkEffect 0.5s infinite alternate; }
+        @keyframes blinkEffect { from { background-color: #ff3333; } to { background-color: #a00000; } }
+        .lower-container { height: 61%; display: flex; gap: 8px; }
+        .map-area { width: 32%; background-color: #e0e0e0; border: 2px solid #bbb; position: relative; text-align: center; }
+        .map-img { width: 100%; height: 100%; object-fit: contain; background-color: #ccc; }
+        .controls-panel { width: 68%; flex-grow: 1; background-color: #fff; border: 2px solid #bbb; padding: 8px; display: flex; flex-direction: column; justify-content: space-between; }
+        .form-row { margin-bottom: 4px; overflow: hidden; }
+        .setting-item { float: left; width: 48%; margin-right: 2%; }
+        .label-text { font-size: 11px; font-weight: bold; color: #333; display: block; }
+        select, input { padding: 4px; font-size: 11px; font-weight: bold; border: 2px solid #bbb; background: white; color: #000; width: 100%; }
+        .btn-container { width: 100%; overflow: hidden; margin-bottom: 4px; }
+        .btn-stop { background-color: #ffe6e6; color: #cc0000; border: 3px solid #cc0000; width: 25%; height: 40px; font-size: 16px; font-weight: bold; cursor: pointer; float: left; margin-right: 3%; }
+        .btn-dispatch { background-color: #fff; color: #000; border: 3px solid #666; width: 72%; height: 40px; font-size: 20px; font-weight: bold; cursor: pointer; float: left; }
+        .bottom-sub-panel { border-top: 2px dashed #999; padding-top: 4px; margin-top: 2px; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; }
+        .panel-section-title { font-size: 11px; font-weight: bold; color: #0044cc; margin-bottom: 2px; border-left: 3px solid #0044cc; padding-left: 5px; }
+        .info-monitor-screen { background-color: #222; color: #ffff00; font-family: monospace; font-size: 10px; font-weight: bold; padding: 2px 5px; border: 1px solid #444; margin-bottom: 5px; }
+        .info-monitor-row { display: flex; justify-content: space-between; }
+        .category-group { display: flex; gap: 4px; margin-bottom: 5px; }
+        .btn-cat { flex: 1; height: 24px; font-size: 11px; font-weight: bold; cursor: pointer; background-color: #e1e1e1; border: 1px solid #999; color: #333; }
+        .btn-cat.selected[data-cat="A+"] { background-color: #ff3333; color: white; border-color: #cc0000; }
+        .btn-cat.selected[data-cat="A"] { background-color: #ff9900; color: white; border-color: #d47a00; }
+        .btn-cat.selected[data-cat="B"] { background-color: #0088cc; color: white; border-color: #006699; }
+        .factor-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-bottom: 5px; }
+        .btn-factor { height: 30px; font-size: 10px; font-weight: bold; background-color: #e6f2ff; border: 1px solid #a6c8ff; color: #003399; cursor: pointer; }
+        .btn-factor.fire-factor { background-color: #ffe6e6; border-color: #ffa6a6; color: #990000; }
+        .dispatch-monitor-screen { background-color: #111; border: 2px solid #333; height: 48px; padding: 3px; overflow-y: auto; font-family: monospace; margin-bottom: 5px; }
+        .monitor-row { font-size: 11px; font-weight: bold; color: #00ff00; margin-bottom: 2px; border-bottom: 1px solid #222; line-height: 16px; }
+        .btn-arrived { float: right; background-color: #333; color: #ffff00; border: 1px solid #ffff00; font-size: 9px; font-weight: bold; padding: 0 4px; cursor: pointer; height: 14px; line-height: 12px; }
+        .weather-monitor-screen { border-top: 2px dashed #bbb; margin-top: 2px; padding-top: 3px; background-color: #fafafa; color: #333; font-size: 11px; font-weight: bold; padding: 2px 5px; border: 1px solid #ddd; }
+    </style>
+</head>
+<body>
 <audio id="snd-sirei" src="sirei.mp3" preload="auto"></audio>
 <audio id="snd-kyukyu" src="kyukyu.mp3" preload="auto"></audio>
 <audio id="snd-kasai" src="kasaisirei.mp3" preload="auto"></audio>
 
 <table class="grid-table" id="grid-table"></table>
-
 <div class="lower-container">
-    <div class="map-area">
-        <img id="map-display" src="https://cyberjapandata.gsi.go.jp/xyz/std/12/3638/1614.png" alt="地図" class="map-img">
-        <label class="map-controls">
-            地図画像を選択
-            <input type="file" id="map-input" accept="image/*" style="display:none;" onchange="loadCustomMap(this)">
-        </label>
-    </div>
-
+    <div class="map-area"><img id="map-display" src="https://cyberjapandata.gsi.go.jp/xyz/std/12/3638/1614.png" class="map-img"></div>
     <div class="controls-panel">
         <div>
             <div class="form-row">
-                <div class="setting-item">
-                    <span class="label-text">司令区分</span>
-                    <select id="cmdType">
-                        <option value="火災司令">火災司令</option>
-                        <option value="救急司令">救急司令</option>
-                        <option value="救助司令">救助司令</option>
-                        <option value="災害司令">災害司令</option>
-                        <option value="その他">その他</option>
-                    </select>
-                </div>
-                <div class="setting-item">
-                    <span class="label-text">町名・場所</span>
-                    <select id="townName">
-                        <option value="学園都市">学園都市</option>
-                        <option value="蔓崎">蔓崎</option>
-                        <option value="研究学園都市">研究学園都市</option>
-                        <option value="新都市中央通り">新都市中央通り</option>
-                        <option value="すくば駅通り">すくば駅通り</option>
-                    </select>
-                </div>
+                <div class="setting-item"><span class="label-text">司令区分</span><select id="cmdType"><option value="火災司令">火災司令</option><option value="救急司令">救急司令</option><option value="救助司令">救助司令</option></select></div>
+                <div class="setting-item"><span class="label-text">町名・場所</span><select id="townName"><option value="学園都市">学園都市</option><option value="蔓崎">蔓崎</option></select></div>
             </div>
-
             <div class="form-row">
-                <div class="setting-item">
-                    <span class="label-text">丁目</span>
-                    <select id="blockNum">
-                        <option value="">（なし）</option>
-                        <option value="一丁目">一丁目</option>
-                        <option value="二丁目">二丁目</option>
-                        <option value="三丁目">三丁目</option>
-                        <option value="四丁目">四丁目</option>
-                        <option value="五丁目">五丁目</option>
-                    </select>
-                </div>
-                <div class="setting-item">
-                    <span class="label-text">付加情報</span>
-                    <select id="nearBy">
-                        <option value="">（なし）</option>
-                        <option value="付近">付近</option>
-                    </select>
-                </div>
+                <div class="setting-item"><span class="label-text">丁目・付加</span><select id="blockNum"><option value="一丁目付近">一丁目付近</option><option value="付近">付近</option></select></div>
+                <div class="setting-item"><span class="label-text">自由入力詳細</span><input type="text" id="freeText" placeholder="内容を入力"></div>
             </div>
-
-            <div class="form-row">
-                <div class="setting-item wide">
-                    <span class="label-text">自由入力詳細</span>
-                    <input type="text" id="freeText" placeholder="内容を入力（例：東山4出向中、など）">
-                </div>
-            </div>
-
-            <div class="credit-area">
-                指令音素材提供：<a href="https://pocket-se.info/" target="_blank">ポケットサウンド</a> / 一関市消防本部司令音
-            </div>
-
             <div class="btn-container">
                 <button class="btn-stop" onclick="stopDispatchPrompt()">司令停止</button>
                 <button class="btn-dispatch" onclick="startDispatch()">出動決定</button>
             </div>
         </div>
-
         <div class="bottom-sub-panel">
-            <div class="quick-accident-title">▶ 予告指令クイックセット</div>
-            <div class="quick-btn-row">
-                <button class="btn-quick fire" onclick="quickSetAccident('火災司令', '建物火災通報あり。黒煙噴出中')">🔥 建物火災</button>
-                <button class="btn-quick ambulance" onclick="quickSetAccident('救急司令', '急病通報、対象者意識なし、無呼吸模様')">🚑 救急無呼吸</button>
-                <button class="btn-quick fire" onclick="quickSetAccident('救助司令', '交通車両事故、運転手1名車内に閉じ込め模様')">🚗 交通救助</button>
-                <button class="btn-quick" onclick="quickSetAccident('災害司令', '突風による電柱倒壊、道路閉塞の模様')">🌀 災害警戒</button>
+            <div class="info-monitor-screen"><div class="info-monitor-row"><span>通信：携帯119（誤差80m）</span><span>16:31</span></div><div class="info-monitor-row"><span>波道：すくば消防1（主）</span><span>共同：茨城第一救急</span></div></div>
+            <div class="panel-section-title">カテゴリー選択</div>
+            <div class="category-group">
+                <button class="btn-cat selected" id="cat-ap" onclick="selectCategory('A+')">救急 A+</button>
+                <button class="btn-cat" id="cat-a" onclick="selectCategory('A')">救急 A</button>
+                <button class="btn-cat" id="cat-b" onclick="selectCategory('B')">救急 B</button>
             </div>
-            
-            <div class="quick-accident-title">▶ すくば情報盤：運用中事案モニター（デジタルタイマー連動）</div>
-            <div class="monitor-screen" id="dispatch-monitor">
-                <div class="monitor-row" style="color: #666;">[状況] 現在、待機中の部隊はすべて正常運用です。</div>
+            <div class="panel-section-title">救急・災害要因因子</div>
+            <div class="factor-grid">
+                <button class="btn-factor" onclick="setFactor('救急司令', '急病通報、対象者意識朦朧の模様')">急病</button>
+                <button class="btn-factor" onclick="setFactor('救急司令', '交通事故、複数名負傷の模様')">交通事故</button>
+                <button class="btn-factor" onclick="setFactor('救急司令', '一般負傷、階段からの転落の模様')">一般負傷</button>
+                <button class="btn-factor" onclick="setFactor('救急司令', '加害（暴行）事故、対象者出血の模様')">加害</button>
+                <button class="btn-factor fire-factor" onclick="setFactor('火災司令', '建物火災通報、黒煙噴出中の模様')">建物火災</button>
+                <button class="btn-factor fire-factor" onclick="setFactor('救助司令', '一般救助出動、車内に要救助者閉じ込め模様')">一般救助</button>
+                <button class="btn-factor" onclick="setFactor('救急司令', '転院搬送依頼、医師同乗にて転院')">転院搬送</button>
+                <button class="btn-factor" onclick="setFactor('救急司令', '労働災害事故、機械に挟まれ負傷模様')">労働災害</button>
             </div>
+            <div class="dispatch-monitor-screen" id="dispatch-monitor"><div class="monitor-row" style="color: #666;">[状況] 現在、すべての部隊は正常運用です。</div></div>
+            <div class="weather-monitor-screen">すくば市：晴れ、北西の風2m/s、湿度40%【乾燥注意報発表中】</div>
         </div>
-
     </div>
 </div>
-
 <script>
     var data = [
-        {
-            station: "中央署",
-            units: [
-                "高度救助隊11", "高度救助隊12", "第一救急隊 14", "第二救急隊 8", "中央タンク34", 
-                "中央ポンプ4", "中央指揮2", "救助課防災支援者51", "救助課資機材運搬車21(水槽付消防ポンプ自動車5)"
-            ]
-        },
-        {
-            station: "並木分署",
-            units: [
-                "並木指揮6", "並木ポンプ64", "並木高度救助隊 13", "並木タンク9", "並木第一救急隊 16", "並木第二救急隊 14"
-            ]
-        },
-        {
-            station: "南谷出張所",
-            units: ["南2", "南救急4", "南谷6"]
-        },
-        {
-            station: "東山出張署",
-            units: ["東山5", "東山9", "東山4", "東山救急1"]
-        }
+        { station: "中央署", units: ["高度救助隊11", "高度救助隊12", "第一救急隊 14", "第二救急隊 8", "中央タンク34"] },
+        { station: "並木分署", units: ["並木指揮6", "並木ポンプ64", "並木高度救助隊 13"] },
+        { station: "東山署", units: ["東山5", "東山9", "東山4", "東山救急1"] }
     ];
-
-    var dispatchCount = 0; 
-    var activeDispatches = {}; 
-    var colorList = ['#0044cc', '#008800', '#ff6600', '#ddcc00'];
+    var dispatchCount = 0; var activeDispatches = {}; var colorList = ['#0044cc', '#008800', '#ff6600'];
+    var currentCategory = "A+"; var timerIntervalId = null;
     var table = document.getElementById('grid-table');
-    
-    var currentAnswer = 0;
-    var requiredCorrectCount = 0;
-    var currentCorrectCount = 0;
-
-    // タイマー動作用のインターバルID
-    var timerIntervalId = null;
 
     for (var g = 0; g < data.length; g++) {
-        var group = data[g];
-        var allCells = [];
-        allCells.push({ text: group.station, isStation: true });
-        for (var u = 0; u < group.units.length; u++) {
-            allCells.push({ text: group.units[u], isStation: false });
-        }
-        var fill = 5 - (allCells.length % 5);
-        if (fill < 5 && fill > 0) {
-            for (var f = 0; f < fill; f++) {
-                allCells.push({ text: "", isStation: false, isEmpty: true });
-            }
-        }
-        
+        var group = data[g]; var allCells = [{ text: group.station, isStation: true }];
+        for (var u = 0; u < group.units.length; u++) { allCells.push({ text: group.units[u], isStation: false }); }
+        var fill = 5 - (allCells.length % 5); if (fill < 5 && fill > 0) { for (var f = 0; f < fill; f++) { allCells.push({ text: "", isStation: false, isEmpty: true }); } }
         var currentRow;
         for (var i = 0; i < allCells.length; i++) {
-            if (i % 5 === 0) {
-                currentRow = table.insertRow(-1);
-                currentRow.style.height = "38px";
-            }
-            var cellData = allCells[i];
-            var td = currentRow.insertCell(-1);
-            td.className = "cell";
-            td.innerHTML = cellData.text;
-            
-            if (cellData.isStation) {
-                td.className = "cell cell-station";
-            } else if (cellData.isEmpty) {
-                td.style.backgroundColor = "#fafafa";
-                td.style.border = "1px dashed #eee";
-                td.style.cursor = "default";
-            } else {
-                td.onclick = (function(targetTd) {
-                    return function() {
-                        if (window.speechSynthesis) window.speechSynthesis.cancel();
-                        try {
-                            document.getElementById('snd-sirei').play().catch(function(){});
-                            document.getElementById('snd-sirei').pause();
-                        } catch(e) {}
-                        
-                        if (targetTd.getAttribute('data-dispatch-id')) return;
-                        
-                        if (targetTd.className.indexOf('active') !== -1) {
-                            targetTd.className = "cell";
-                        } else {
-                            targetTd.className = "cell active";
-                        }
-                    };
-                })(td);
-            }
+            if (i % 5 === 0) { currentRow = table.insertRow(-1); currentRow.style.height = "32px"; }
+            var cellData = allCells[i]; var td = currentRow.insertCell(-1); td.className = "cell"; td.innerHTML = cellData.text;
+            if (cellData.isStation) { td.className = "cell cell-station"; }
+            else if (cellData.isEmpty) { td.style.backgroundColor = "#fafafa"; td.style.border = "1px dashed #eee"; }
+            else { td.onclick = (function(targetTd) { return function() { if (targetTd.getAttribute('data-dispatch-id')) return; targetTd.className = (targetTd.className.indexOf('active') !== -1) ? "cell" : "cell active"; }; })(td); }
         }
     }
-
-    function quickSetAccident(type, detail) {
-        document.getElementById('cmdType').value = type;
-        document.getElementById('freeText').value = detail;
-        document.getElementById('nearBy').value = "付近";
-    }
-
-    // ⏱️ 秒数を「〇〇分〇〇秒」の形に変換するヘルパー関数
-    function formatTime(seconds) {
-        var m = Math.floor(seconds / 60);
-        var s = seconds % 60;
-        return (m < 10 ? "0" + m : m) + "分" + (s < 10 ? "0" + s : s) + "秒";
-    }
-
-    // 現場到着ボタンが押された時の処理
-    function setUnitArrived(id) {
-        if (activeDispatches[id]) {
-            activeDispatches[id].isArrived = true;
-            updateMonitorDisplay();
-        }
-    }
-
-    // ⏱️ 1秒ごとにすべての稼働中タイマーを進める関数
-    function startGlobalTimerLoop() {
-        if (timerIntervalId !== null) return;
-        timerIntervalId = setInterval(function() {
-            var hasActiveTimers = false;
-            for (var id in activeDispatches) {
-                if (activeDispatches.hasOwnProperty(id)) {
-                    // まだ到着していなければ秒数を進める
-                    if (!activeDispatches[id].isArrived) {
-                        activeDispatches[id].seconds++;
-                    }
-                    hasActiveTimers = true;
-                }
-            }
-            if (hasActiveTimers) {
-                updateMonitorDisplay();
-            } else {
-                clearInterval(timerIntervalId);
-                timerIntervalId = null;
-            }
-        }, 1000);
-    }
-
-    // モニター表示を新しく書き換える関数
-    function updateMonitorDisplay() {
-        var mScreen = document.getElementById('dispatch-monitor');
-        var html = "";
-        var hasActive = false;
-
-        for (var id in activeDispatches) {
-            if (activeDispatches.hasOwnProperty(id)) {
-                hasActive = true;
-                var item = activeDispatches[id];
-                var timeStr = formatTime(item.seconds);
-
-                if (item.isArrived) {
-                    // 現場到着済みのスタイル（赤色表示に変化）
-                    html += "<div class='monitor-row' style='color: #ff3333;'>";
-                    html += "🚨 【現着】事案" + id + "：" + item.label + " ＝ ⚡ " + timeStr + "で現場到着・活動中";
-                    html += "</div>";
-                } else {
-                    // 現在出向・出動中のスタイル（黄緑色でタイマー進行）
-                    html += "<div class='monitor-row'>";
-                    html += "<button class='btn-arrived' onclick='setUnitArrived(" + id + ")'>現着報告</button>";
-                    html += "▶ 【出動】事案" + id + "：" + item.label + " ＝ ⏱️ 経過 " + timeStr;
-                    html += "</div>";
-                }
-            }
-        }
-
-        if (!hasActive) {
-            html = "<div class='monitor-row' style='color: #666;'>[状況] 現在、待機中の部隊はすべて正常運用です。</div>";
-        }
-        mScreen.innerHTML = html;
-    }
-
-    function checkServerCrash() {
-        var chance = Math.floor(Math.random() * 10) + 1;
-        if (chance === 1) {
-            triggerSystemDown("🚨司令システムダウン、再起動してください🚨");
-            return true;
-        }
-        return false;
-    }
-
-    function triggerSystemDown(messageText) {
-        if (window.speechSynthesis) window.speechSynthesis.cancel();
-        document.getElementById('down-message-text').innerText = messageText;
-        requiredCorrectCount = Math.floor(Math.random() * 3) + 1;
-        currentCorrectCount = 0;
-        document.getElementById('reboot-main-btn').style.display = 'none';
-        generatePuzzle();
-        document.getElementById('system-down-overlay').style.display = 'block';
-        document.getElementById('puzzle-ans-input').focus();
-    }
-
-    function generatePuzzle() {
-        var num1 = Math.floor(Math.random() * 8) + 2; 
-        var num2 = Math.floor(Math.random() * 8) + 2; 
-        var operators = ['+', '-', '×'];
-        var op = operators[Math.floor(Math.random() * operators.length)];
-        var qText = "";
-        if (op === '+') { qText = num1 + " ＋ " + num2 + " ＝ ？"; currentAnswer = num1 + num2; }
-        else if (op === '-') { if (num1 < num2) { var t = num1; num1 = num2; num2 = t; } qText = num1 + " － " + num2 + " ＝ ？"; currentAnswer = num1 - num2; }
-        else if (op === '×') { qText = num1 + " ✕ " + num2 + " ＝ ？"; currentAnswer = num1 * num2; }
-        
-        document.getElementById('puzzle-q-display').innerText = qText;
-        var remains = requiredCorrectCount - currentCorrectCount;
-        document.getElementById('puzzle-status-text').innerText = "あと " + remains + " 回正解でバイパス復旧";
-        document.getElementById('puzzle-ans-input').value = "";
-    }
-
-    function checkPuzzleAnswer() {
-        var userAns = document.getElementById('puzzle-ans-input').value;
-        if (parseInt(userAns, 10) === currentAnswer) {
-            currentCorrectCount++;
-            if (currentCorrectCount >= requiredCorrectCount) {
-                document.getElementById('puzzle-status-text').innerText = "認証完了！システムを復旧できます。";
-                document.getElementById('puzzle-q-display').innerText = "🔓 SUCCESS";
-                document.getElementById('reboot-main-btn').style.display = 'inline-block';
-                document.getElementById('reboot-main-btn').focus();
-            } else {
-                generatePuzzle();
-                document.getElementById('puzzle-ans-input').focus();
-            }
-        } else {
-            alert("演算エラー！不正な数値です。再計算してください。");
-            document.getElementById('puzzle-ans-input').value = "";
-            document.getElementById('puzzle-ans-input').focus();
-        }
-    }
-
-    function rebootSystem() {
-        document.getElementById('system-down-overlay').style.display = 'none';
-        alert("バイパスシステム起動に成功。運用表示盤は正常です。");
-    }
-
-    function loadCustomMap(input) {
-        if (input.files && input.files[0]) {
-            var reader = new FileReader();
-            reader.onload = function(e) { document.getElementById('map-display').src = e.target.result; };
-            reader.readAsDataURL(input.files[0]);
-        }
-    }
-
+    function selectCategory(cat) { currentCategory = cat; document.querySelectorAll('.btn-cat').forEach(function(btn){ btn.classList.remove('selected'); }); if(cat === "A+") document.getElementById('cat-ap').classList.add('selected'); if(cat === "A") document.getElementById('cat-a').classList.add('selected'); if(cat === "B") document.getElementById('cat-b').classList.add('selected'); }
+    function setFactor(type, detail) { document.getElementById('cmdType').value = type; document.getElementById('freeText').value = detail; }
+    function formatTime(seconds) { var m = Math.floor(seconds / 60); var s = seconds % 60; return (m < 10 ? "0" + m : m) + "分" + (s < 10 ? "0" + s : s) + "秒"; }
+    function setUnitArrived(id) { if (activeDispatches[id]) { activeDispatches[id].isArrived = true; updateMonitorDisplay(); } }
+    function startGlobalTimerLoop() { if (timerIntervalId !== null) return; timerIntervalId = setInterval(function() { var hasActive = false; for (var id in activeDispatches) { if (activeDispatches.hasOwnProperty(id)) { if (!activeDispatches[id].isArrived) activeDispatches[id].seconds++; hasActive = true; } } if (hasActive) updateMonitorDisplay(); else { clearInterval(timerIntervalId); timerIntervalId = null; } }, 1000); }
+    function updateMonitorDisplay() { var mScreen = document.getElementById('dispatch-monitor'); var html = ""; var hasActive = false; for (var id in activeDispatches) { if (activeDispatches.hasOwnProperty(id)) { hasActive = true; var item = activeDispatches[id]; var timeStr = formatTime(item.seconds); if (item.isArrived) html += "<div class='monitor-row' style='color: #ff3333;'>🚨 【現着】事案" + id + item.label + "＝⚡" + timeStr + "現着</div>"; else html += "<div class='monitor-row'><button class='btn-arrived' onclick='setUnitArrived(" + id + ")'>現着</button>▶ 【出動】事案" + id + item.label + "＝⏱️" + timeStr + "</div>"; } } if (!hasActive) html = "<div class='monitor-row' style='color: #666;'>[状況] 現在、待機中の部隊はすべて正常運用です。</div>"; mScreen.innerHTML = html; }
     function startDispatch() {
-        if (checkServerCrash()) return;
-
-        var allTds = table.getElementsByTagName('td');
-        var selectedElements = [];
-        var selectedUnits = [];
-        
-        for (var d = 0; d < allTds.length; d++) {
-            if (allTds[d].className.indexOf('active') !== -1) {
-                selectedElements.push(allTds[d]);
-                selectedUnits.push(allTds[d].innerText || allTds[d].textContent || "");
-            }
-        }
-        
+        var allTds = table.getElementsByTagName('td'); var selectedElements = []; var selectedUnits = [];
+        for (var d = 0; d < allTds.length; d++) { if (allTds[d].className.indexOf('active') !== -1) { selectedElements.push(allTds[d]); selectedUnits.push(allTds[d].innerText || allTds[d].textContent || ""); } }
         if (selectedUnits.length === 0) return;
-
-        dispatchCount++; 
-        var colorIndex = (dispatchCount - 1) % 4; 
-        var dispatchColor = colorList[colorIndex];
-
-        var cmd = document.getElementById('cmdType').value;
-        var town = document.getElementById('townName').value;
-        var block = document.getElementById('blockNum').value;
-        var near = document.getElementById('nearBy').value;
-        var free = document.getElementById('freeText').value;
-
-        var address = "すくば市、" + town + "、" + block + near;
-        var unitsPhrase = selectedUnits.join("、");
-        var speechText = cmd + "。" + address + "。" + free + "。出動部隊、" + unitsPhrase + "。以上。";
-
-        var cleanCmdName = cmd.replace("司令", ""); 
-        
-        // ⏱️ タイマー用に「seconds: 0」と「isArrived: false」のデータを追加！
-        activeDispatches[dispatchCount] = {
-            label: cleanCmdName + "[" + town + "] (" + selectedUnits.join(",") + ")",
-            elements: selectedElements,
-            seconds: 0,
-            isArrived: false
-        };
-
-        updateMonitorDisplay();
-        startGlobalTimerLoop(); // タイマーのカウントを開始
-
-        var audioSirei = document.getElementById('snd-sirei');
-        var audioKyukyu = document.getElementById('snd-kyukyu');
-        var audioKasai = document.getElementById('snd-kasai');
-        
-        try {
-            audioSirei.pause(); audioSirei.currentTime = 0;
-            audioKyukyu.pause(); audioKyukyu.currentTime = 0;
-            audioKasai.pause(); audioKasai.currentTime = 0;
-        } catch(e) {}
-
+        dispatchCount++; var dispatchColor = colorList[(dispatchCount - 1) % 3]; var cmd = document.getElementById('cmdType').value; var town = document.getElementById('townName').value; var block = document.getElementById('blockNum').value; var free = document.getElementById('freeText').value;
+        var speechText = "カテゴリー" + currentCategory + "。" + cmd + "。" + town + "、" + block + "。" + free + "。出動部隊、" + selectedUnits.join("、") + "。以上。";
+        activeDispatches[dispatchCount] = { label: "-[" + currentCategory + " " + town + "](" + selectedUnits.join(",") + ")", elements: selectedElements, seconds: 0, isArrived: false };
+        updateMonitorDisplay(); startGlobalTimerLoop();
+        var audioSirei = document.getElementById('snd-sirei'); var audioKyukyu = document.getElementById('snd-kyukyu'); var audioKasai = document.getElementById('snd-kasai');
+        try { audioSirei.pause(); audioSirei.currentTime = 0; audioKyukyu.pause(); audioKyukyu.currentTime = 0; audioKasai.pause(); audioKasai.currentTime = 0; } catch(e){}
         if (window.speechSynthesis) window.speechSynthesis.cancel();
-
-        var activeAudio = audioSirei;
-        if (cmd === "救急司令") { activeAudio = audioKyukyu; }
-        else if (cmd === "救助司令" || cmd === "災害司令") { activeAudio = audioKasai; }
-
-        try {
-            activeAudio.play().then(function() {
-                activeAudio.onended = function() { playSpeech(speechText); };
-            }).catch(function() { playSpeech(speechText); });
-        } catch(e) { playSpeech(speechText); }
-
-        for (var s = 0; s < selectedElements.length; s++) {
-            var el = selectedElements[s];
-            el.className = "cell"; 
-            el.style.backgroundColor = dispatchColor;
-            el.style.color = '#ffffff';
-            el.setAttribute('data-dispatch-id', dispatchCount); 
-        }
+        var activeAudio = (cmd === "救急司令") ? audioKyukyu : ((cmd === "救助司令" || cmd === "災害司令") ? audioKasai : audioSirei);
+        try { activeAudio.play().then(function(){ activeAudio.onended = function(){ playSpeech(speechText); }; }).catch(function(){ playSpeech(speechText); }); } catch(e){ playSpeech(speechText); }
+        for (var s = 0; s < selectedElements.length; s++) { var el = selectedElements[s]; el.className = "cell"; el.style.backgroundColor = dispatchColor; el.style.color = '#fff'; el.setAttribute('data-dispatch-id', dispatchCount); }
     }
-
-    function playSpeech(text) {
-        if ('speechSynthesis' in window) {
-            var uttr = new SpeechSynthesisUtterance(text);
-            uttr.lang = 'ja-JP';
-            uttr.rate = 1.25;
-            window.speechSynthesis.speak(uttr);
-        }
-    }
-
+    function playSpeech(text) { if ('speechSynthesis' in window) { var uttr = new SpeechSynthesisUtterance(text); uttr.lang = 'ja-JP'; uttr.rate = 1.3; window.speechSynthesis.speak(uttr); } }
     function stopDispatchPrompt() {
-        if (checkServerCrash()) return;
-
-        var keys = [];
-        for (var k in activeDispatches) { if (activeDispatches.hasOwnProperty(k)) keys.push(k); }
-
-        var message = "何回目の出動を停止させますか？\n（「全停止」と打つとすべての出動を停止します）\n\n";
-        if (keys.length > 0) {
-            message += "現在出動中の事案一覧：\n";
-            for (var i = 0; i < keys.length; i++) {
-                var id = keys[i];
-                message += "[" + id + "] " + activeDispatches[id].label + "\n";
-            }
-        } else {
-            message += "（現在出動中の部隊はありません）\n";
-        }
-        message += "\n停止させたい事案の【番号】または【全停止】を入力。";
-
-        var inputId = prompt(message, "");
-        if (inputId === null || inputId === "") return; 
-
-        if (inputId.length === 4) {
-            var _0xef42 = (inputId.charCodeAt(0) * 7) + (inputId.charCodeAt(1) * 7) + (inputId.charCodeAt(2) * 7) + (inputId.charCodeAt(3) * 7);
-            if (_0xef42 === 1540) {
-                var eventMenu = "【管理者専用メニュー】\n[1] 司令システムダウン [2] 無線回線不通 [3] 119番回線輻輳 [4] バックアップ切替";
-                var eventChoice = prompt(eventMenu, "1");
-                if (eventChoice === "1") triggerSystemDown("🚨司令システムダウン、再起動してください🚨");
-                else if (eventChoice === "2") triggerSystemDown("🚨【警告】各無線統制回線が不通です🚨");
-                else if (eventChoice === "3") triggerSystemDown("🚨【回線注意】119番通報が一時的に輻輳しています🚨");
-                else if (eventChoice === "4") triggerSystemDown("🚨【運用制限】メイン指令台エラー。予備盤へ切り替えます🚨");
-                return;
-            }
-        }
-
-        if (inputId === "全停止") {
-            var allTds = table.getElementsByTagName('td');
-            for (var m = 0; m < allTds.length; m++) {
-                if (allTds[m].getAttribute('data-dispatch-id')) {
-                    allTds[m].style.backgroundColor = '#ffffff';
-                    allTds[m].style.color = '#000000';
-                    allTds[m].removeAttribute('data-dispatch-id');
-                }
-            }
-            activeDispatches = {}; 
-            updateMonitorDisplay();
-            alert("すべての出動指令を停止しました。");
-            return;
-        }
-
-        if (activeDispatches[inputId]) {
-            var elementsToReset = activeDispatches[inputId].elements;
-            for (var r = 0; r < elementsToReset.length; r++) {
-                var el = elementsToReset[r];
-                el.style.backgroundColor = '#ffffff';
-                el.style.color = '#000000';
-                el.removeAttribute('data-dispatch-id');
-            }
-            delete activeDispatches[inputId];
-            updateMonitorDisplay();
-            alert(inputId + "回目の出動部隊の帰署を確認しました。");
-        } else {
-            alert("入力内容が正しくありません。");
-        }
+        var keys = []; for (var k in activeDispatches) { if (activeDispatches.hasOwnProperty(k)) keys.push(k); }
+        var message = "事案番号を入力。\n\n"; for (var i = 0; i < keys.length; i++) { message += "[" + keys[i] + "]" + activeDispatches[keys[i]].label + "\n"; }
+        var inputId = prompt(message, ""); if (inputId === null || inputId === "") return;
+        if (inputId === "全停止") { var allTds = table.getElementsByTagName('td'); for (var m = 0; m < allTds.length; m++) { if (allTds[m].getAttribute('data-dispatch-id')) { allTds[m].style.backgroundColor = '#fff'; allTds[m].style.color = '#000'; allTds[m].removeAttribute('data-dispatch-id'); } } activeDispatches = {}; updateMonitorDisplay(); return; }
+        if (activeDispatches[inputId]) { var elementsToReset = activeDispatches[inputId].elements; for (var r = 0; r < elementsToReset.length; r++) { var el = elementsToReset[r]; el.style.backgroundColor = '#fff'; el.style.color = '#000'; el.removeAttribute('data-dispatch-id'); } delete activeDispatches[inputId]; updateMonitorDisplay(); }
     }
 </script>
+</body>
+</html>
+</script>
+
 </body>
 </html>
