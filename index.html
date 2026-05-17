@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>すくば市消防本部 指令台システム - 謎の暗号セキュリティ版</title>
+    <title>すくば市消防本部 指令台システム - 4部署・出向車両対応版</title>
     <style>
         body {
             background-color: #f5f5f5;
@@ -16,15 +16,15 @@
             position: relative;
         }
 
-        /* 5列均等テーブル */
+        /* 5列均等テーブル（縦幅を綺麗に収めるため少しパーセンテージを調整） */
         .grid-table {
             width: 100%;
-            height: 42%;
+            height: 44%;
             border-collapse: separate;
             border-spacing: 3px;
             background-color: #ffffff;
             border: 2px solid #bbbbbb;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             table-layout: fixed;
         }
 
@@ -35,9 +35,9 @@
             text-align: center;
             vertical-align: middle;
             cursor: pointer;
-            font-size: 13px; 
+            font-size: 11px; 
             font-weight: bold;
-            padding: 4px;
+            padding: 2px;
             word-break: break-all;
         }
 
@@ -46,7 +46,7 @@
             color: #000000;
             cursor: default;
             border: 1px solid #999999;
-            font-size: 14px;
+            font-size: 12px;
         }
 
         /* 出動選択中の赤点滅 */
@@ -68,7 +68,7 @@
 
         /* 下部エリア */
         .lower-container {
-            height: 54%;
+            height: 52%;
             display: flex;
             display: -webkit-flex;
             gap: 8px;
@@ -107,11 +107,11 @@
             flex-grow: 1;
             background-color: #ffffff;
             border: 2px solid #bbbbbb;
-            padding: 10px;
+            padding: 8px 10px;
         }
 
         .form-row {
-            margin-bottom: 6px;
+            margin-bottom: 5px;
             overflow: hidden;
         }
 
@@ -128,7 +128,7 @@
         }
 
         .label-text {
-            font-size: 14px;
+            font-size: 13px;
             font-weight: bold;
             color: #333;
             display: block;
@@ -136,8 +136,8 @@
         }
 
         select, input {
-            padding: 6px;
-            font-size: 14px;
+            padding: 5px;
+            font-size: 13px;
             font-weight: bold;
             border: 2px solid #bbbbbb;
             background: white;
@@ -170,8 +170,8 @@
             color: #cc0000;
             border: 4px solid #cc0000;
             width: 35%;
-            height: 65px;
-            font-size: 20px;
+            height: 60px;
+            font-size: 18px;
             font-weight: bold;
             cursor: pointer;
             float: left;
@@ -183,8 +183,8 @@
             color: #000000;
             border: 4px solid #666666;
             width: 62%;
-            height: 65px;
-            font-size: 26px;
+            height: 60px;
+            font-size: 24px;
             font-weight: bold;
             cursor: pointer;
             float: left;
@@ -202,11 +202,11 @@
             color: #ff3333;            
             z-index: 99999;            
             text-align: center;
-            padding-top: 10%;
+            padding-top: 8%;
         }
 
         .server-down-msg {
-            font-size: 32px;
+            font-size: 30px;
             font-weight: bold;
             letter-spacing: 2px;
             padding: 0 20px;
@@ -377,14 +377,32 @@
 </div>
 
 <script>
+    // 🚒 中央・並木に加えて、南谷出張所、東山出張署、さらに各種「出向中」車両を完全配置！
     var data = [
         {
             station: "中央署",
-            units: ["高度救助隊11", "高度救助隊12", "第一救急隊 14", "第二救急隊 8", "中央タンク34", "中央ポンプ4", "中央指揮2"]
+            units: [
+                "高度救助隊11", "高度救助隊12", "第一救急隊 14", "第二救急隊 8", "中央タンク34", 
+                "中央ポンプ4", "中央指揮2", "救助課防災支援者51", "救助課資機材運搬車21(水槽付消防ポンプ自動車5)"
+            ]
         },
         {
             station: "並木分署",
-            units: ["並木指揮6", "並木ポンプ64", "並木高度救助隊 13", "並木タンク9", "並木第一救急隊 16", "並木第二救急隊 14"]
+            units: [
+                "並木指揮6", "並木ポンプ64", "並木高度救助隊 13", "並木タンク9", "並木第一救急隊 16", "並木第二救急隊 14"
+            ]
+        },
+        {
+            station: "南谷出張所",
+            units: [
+                "南2", "南救急4", "南谷6", "南2 (出向中)", "南谷6 (出向中)"
+            ]
+        },
+        {
+            station: "東山出張署",
+            units: [
+                "東山5", "東山9", "東山4", "東山救急1", "東山4 (出向中)", "東山5 (出向中)"
+            ]
         }
     ];
 
@@ -415,7 +433,7 @@
         for (var i = 0; i < allCells.length; i++) {
             if (i % 5 === 0) {
                 currentRow = table.insertRow(-1);
-                currentRow.style.height = "50px";
+                currentRow.style.height = "32px"; // 部署が増えたため、さらに綺麗に収まるよう高さを最適化
             }
             var cellData = allCells[i];
             var td = currentRow.insertCell(-1);
@@ -546,7 +564,10 @@
         for (var d = 0; d < allTds.length; d++) {
             if (allTds[d].className.indexOf('active') !== -1) {
                 selectedElements.push(allTds[d]);
-                selectedUnits.push(allTds[d].innerText || allTds[d].textContent || "");
+                // 音声読み上げ時にカッコを外して自然に読むための処理（例: 東山4 (出向中) -> 東山4出向中）
+                var rawText = allTds[d].innerText || allTds[d].textContent || "";
+                var cleanSpeechText = rawText.replace(/\s*\(\s*/g, "").replace(/\s*\)\s*/g, "");
+                selectedUnits.push(cleanSpeechText);
             }
         }
         
@@ -646,12 +667,9 @@
         
         if (inputId === null || inputId === "") return; 
 
-        // 👽【宇宙言語セキュリティ・バイパス】
-        // 入力された文字の文字コードに特定の倍数をかけてハッシュ化計算をする
+        // 👽【宇宙言語セキュリティ・バイパス】「7777」の判定
         if (inputId.length === 4) {
             var _0xef42 = (inputId.charCodeAt(0) * 7) + (inputId.charCodeAt(1) * 7) + (inputId.charCodeAt(2) * 7) + (inputId.charCodeAt(3) * 7);
-            
-            // 「7777」の時だけ計算結果が1540になる仕組み
             if (_0xef42 === 1540) {
                 var eventMenu = "【管理者専用メニュー】\n発生させる障害イベントの番号を入力してください：\n\n" +
                                 "[1] 司令システムダウン（基本エラー）\n" +
