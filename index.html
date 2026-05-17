@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>すくば市消防本部 指令台システム - スマート運用版</title>
+    <title>すくば市消防本部 指令台システム - フルモニター版</title>
     <style>
         body {
             background-color: #f5f5f5;
@@ -16,7 +16,7 @@
             position: relative;
         }
 
-        /* 5列均等テーブル（スッキリ見やすくなるよう縦幅を再調整） */
+        /* 5列均等テーブル */
         .grid-table {
             width: 100%;
             height: 42%;
@@ -49,7 +49,6 @@
             font-size: 13px;
         }
 
-        /* 出動選択中の赤点滅 */
         .cell.active {
             background-color: #ff3333 !important;
             color: #ffffff !important;
@@ -108,10 +107,13 @@
             background-color: #ffffff;
             border: 2px solid #bbbbbb;
             padding: 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
 
         .form-row {
-            margin-bottom: 6px;
+            margin-bottom: 5px;
             overflow: hidden;
         }
 
@@ -128,7 +130,7 @@
         }
 
         .label-text {
-            font-size: 14px;
+            font-size: 13px;
             font-weight: bold;
             color: #333;
             display: block;
@@ -136,8 +138,8 @@
         }
 
         select, input {
-            padding: 6px;
-            font-size: 14px;
+            padding: 5px;
+            font-size: 13px;
             font-weight: bold;
             border: 2px solid #bbbbbb;
             background: white;
@@ -145,13 +147,14 @@
             width: 100%;
         }
 
+        /* 📝 クレジットエリアのデザイン微調整 */
         .credit-area {
             text-align: right;
             font-size: 11px;
-            color: #777777;
+            color: #555555;
             font-weight: bold;
-            margin-top: 2px;
-            margin-bottom: 4px;
+            margin-top: 1px;
+            margin-bottom: 3px;
             clear: both;
         }
 
@@ -163,15 +166,16 @@
         .btn-container {
             width: 100%;
             overflow: hidden;
+            margin-bottom: 6px;
         }
 
         .btn-stop {
             background-color: #ffe6e6;
             color: #cc0000;
-            border: 4px solid #cc0000;
+            border: 3px solid #cc0000;
             width: 35%;
-            height: 65px;
-            font-size: 20px;
+            height: 48px;
+            font-size: 18px;
             font-weight: bold;
             cursor: pointer;
             float: left;
@@ -181,16 +185,67 @@
         .btn-dispatch {
             background-color: #ffffff;
             color: #000000;
-            border: 4px solid #666666;
+            border: 3px solid #666666;
             width: 62%;
-            height: 65px;
-            font-size: 26px;
+            height: 48px;
+            font-size: 22px;
             font-weight: bold;
             cursor: pointer;
             float: left;
         }
 
-        /* 🚨 サーバダウン・イベント発生用の暗転画面 */
+        /* 下半身のカスタムエリア */
+        .bottom-sub-panel {
+            border-top: 2px dashed #999999;
+            padding-top: 6px;
+            margin-top: 4px;
+            overflow: hidden;
+        }
+
+        /* 予告一発ボタン */
+        .quick-accident-title {
+            font-size: 12px;
+            font-weight: bold;
+            color: #555555;
+            margin-bottom: 4px;
+        }
+        .quick-btn-row {
+            overflow: hidden;
+            margin-bottom: 6px;
+        }
+        .btn-quick {
+            float: left;
+            width: 23%;
+            margin-right: 2%;
+            height: 28px;
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+            background-color: #f0f0f0;
+            border: 1px solid #777777;
+            color: #000000;
+        }
+        .btn-quick.fire { background-color: #ffcccc; color: #cc0000; border-color: #cc0000; }
+        .btn-quick.ambulance { background-color: #e6f2ff; color: #0044cc; border-color: #0044cc; }
+
+        /* 電光掲示板風 出動部隊モニター */
+        .monitor-screen {
+            background-color: #111111;
+            border: 2px solid #333333;
+            height: 62px;
+            padding: 4px;
+            overflow-y: auto;
+            font-family: monospace;
+        }
+        .monitor-row {
+            font-size: 12px;
+            font-weight: bold;
+            color: #00ff00; 
+            margin-bottom: 2px;
+            border-bottom: 1px solid #222222;
+        }
+
+        /* サーバダウン画面 */
         .server-down-screen {
             display: none; 
             position: absolute;
@@ -204,87 +259,25 @@
             text-align: center;
             padding-top: 10%;
         }
-
         .server-down-msg {
             font-size: 32px;
             font-weight: bold;
-            letter-spacing: 2px;
-            padding: 0 20px;
             margin-bottom: 20px;
             animation: textBlink 0.6s infinite alternate;
-            -webkit-animation: textBlink 0.6s infinite alternate;
         }
-
-        @keyframes textBlink {
-            from { opacity: 1.0; }
-            to { opacity: 0.3; }
-        }
-        @-webkit-keyframes textBlink {
-            from { opacity: 1.0; }
-            to { opacity: 0.3; }
-        }
-
-        /* 復旧計算エリア */
-        .puzzle-box {
-            background-color: #111111;
-            border: 2px solid #ff3333;
-            width: 320px;
-            margin: 0 auto;
-            padding: 15px;
-            color: #ffffff;
-        }
-
-        .puzzle-question {
-            font-size: 26px;
-            font-weight: bold;
-            color: #ffff00;
-            margin-bottom: 10px;
-        }
-
-        .puzzle-status {
-            font-size: 14px;
-            color: #ff9999;
-            margin-bottom: 10px;
-        }
-
-        .puzzle-input {
-            width: 120px;
-            font-size: 20px;
-            text-align: center;
-            background: #222;
-            color: #fff;
-            border: 2px solid #555;
-            padding: 4px;
-        }
-
-        .btn-puzzle-submit {
-            padding: 6px 15px;
-            font-size: 16px;
-            font-weight: bold;
-            background-color: #ff3333;
-            color: #000000;
-            border: none;
-            cursor: pointer;
-            margin-left: 5px;
-        }
-
-        .btn-reboot {
-            margin-top: 25px;
-            padding: 12px 25px;
-            font-size: 18px;
-            font-weight: bold;
-            background-color: #333333;
-            color: #ffffff;
-            border: 2px solid #ff3333;
-            cursor: pointer;
-        }
+        @keyframes textBlink { from { opacity: 1.0; } to { opacity: 0.3; } }
+        .puzzle-box { background-color: #111111; border: 2px solid #ff3333; width: 320px; margin: 0 auto; padding: 15px; color: #ffffff; }
+        .puzzle-question { font-size: 26px; font-weight: bold; color: #ffff00; margin-bottom: 10px; }
+        .puzzle-status { font-size: 14px; color: #ff9999; margin-bottom: 10px; }
+        .puzzle-input { width: 120px; font-size: 20px; text-align: center; background: #222; color: #fff; border: 2px solid #555; padding: 4px; }
+        .btn-puzzle-submit { padding: 6px 15px; font-size: 16px; font-weight: bold; background-color: #ff3333; color: #000000; border: none; cursor: pointer; margin-left: 5px; }
+        .btn-reboot { margin-top: 25px; padding: 12px 25px; font-size: 18px; font-weight: bold; background-color: #333333; color: #ffffff; border: 2px solid #ff3333; cursor: pointer; }
     </style>
 </head>
 <body>
 
 <div id="system-down-overlay" class="server-down-screen">
     <div id="down-message-text" class="server-down-msg">🚨司令システムダウン、再起動してください🚨</div>
-    
     <div class="puzzle-box">
         <div style="font-size: 14px; font-weight: bold; margin-bottom: 5px;">【緊急復旧バイパス接続演算】</div>
         <div id="puzzle-status-text" class="puzzle-status">残り正解数: 3回</div>
@@ -294,7 +287,6 @@
             <button type="button" class="btn-puzzle-submit" onclick="checkPuzzleAnswer()">送信</button>
         </form>
     </div>
-
     <button class="btn-reboot" id="reboot-main-btn" onclick="rebootSystem()" style="display:none;">システムを復旧・再起動</button>
 </div>
 
@@ -314,70 +306,87 @@
     </div>
 
     <div class="controls-panel">
-        <div class="form-row">
-            <div class="setting-item">
-                <span class="label-text">司令区分</span>
-                <select id="cmdType">
-                    <option value="火災司令">火災司令</option>
-                    <option value="救急司令">救急司令</option>
-                    <option value="救助司令">救助司令</option>
-                    <option value="災害司令">災害司令</option>
-                    <option value="その他">その他</option>
-                </select>
+        <div>
+            <div class="form-row">
+                <div class="setting-item">
+                    <span class="label-text">司令区分</span>
+                    <select id="cmdType">
+                        <option value="火災司令">火災司令</option>
+                        <option value="救急司令">救急司令</option>
+                        <option value="救助司令">救助司令</option>
+                        <option value="災害司令">災害司令</option>
+                        <option value="その他">その他</option>
+                    </select>
+                </div>
+                <div class="setting-item">
+                    <span class="label-text">町名・場所</span>
+                    <select id="townName">
+                        <option value="学園都市">学園都市</option>
+                        <option value="蔓崎">蔓崎</option>
+                        <option value="研究学園都市">研究学園都市</option>
+                        <option value="新都市中央通り">新都市中央通り</option>
+                        <option value="すくば駅通り">すくば駅通り</option>
+                    </select>
+                </div>
             </div>
-            <div class="setting-item">
-                <span class="label-text">町名・場所</span>
-                <select id="townName">
-                    <option value="学園都市">学園都市</option>
-                    <option value="蔓崎">蔓崎</option>
-                    <option value="研究学園都市">研究学園都市</option>
-                    <option value="新都市中央通り">新都市中央通り</option>
-                    <option value="すくば駅通り">すくば駅通り</option>
-                </select>
+
+            <div class="form-row">
+                <div class="setting-item">
+                    <span class="label-text">丁目</span>
+                    <select id="blockNum">
+                        <option value="">（なし）</option>
+                        <option value="一丁目">一丁目</option>
+                        <option value="二丁目">二丁目</option>
+                        <option value="三丁目">三丁目</option>
+                        <option value="四丁目">四丁目</option>
+                        <option value="五丁目">五丁目</option>
+                    </select>
+                </div>
+                <div class="setting-item">
+                    <span class="label-text">付加情報</span>
+                    <select id="nearBy">
+                        <option value="">（なし）</option>
+                        <option value="付近">付近</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="setting-item wide">
+                    <span class="label-text">自由入力詳細</span>
+                    <input type="text" id="freeText" placeholder="内容を入力（例：東山4出向中、など）">
+                </div>
+            </div>
+
+            <div class="credit-area">
+                指令音素材提供：<a href="https://pocket-se.info/" target="_blank">ポケットサウンド</a> / 一関市消防本部司令音
+            </div>
+
+            <div class="btn-container">
+                <button class="btn-stop" onclick="stopDispatchPrompt()">司令停止</button>
+                <button class="btn-dispatch" onclick="startDispatch()">出動決定</button>
             </div>
         </div>
 
-        <div class="form-row">
-            <div class="setting-item">
-                <span class="label-text">丁目</span>
-                <select id="blockNum">
-                    <option value="">（なし）</option>
-                    <option value="一丁目">一丁目</option>
-                    <option value="二丁目">二丁目</option>
-                    <option value="三丁目">三丁目</option>
-                    <option value="四丁目">四丁目</option>
-                    <option value="五丁目">五丁目</option>
-                </select>
+        <div class="bottom-sub-panel">
+            <div class="quick-accident-title">▶ 予告指令クイックセット</div>
+            <div class="quick-btn-row">
+                <button class="btn-quick fire" onclick="quickSetAccident('火災司令', '建物火災通報あり。黒煙噴出中')">🔥 建物火災</button>
+                <button class="btn-quick ambulance" onclick="quickSetAccident('救急司令', '急病通報、対象者意識なし、無呼吸模様')">🚑 救急無呼吸</button>
+                <button class="btn-quick fire" onclick="quickSetAccident('救助司令', '交通車両事故、運転手1名車内に閉じ込め模様')">🚗 交通救助</button>
+                <button class="btn-quick" onclick="quickSetAccident('災害司令', '突風による電柱倒壊、道路閉塞の模様')">🌀 災害警戒</button>
             </div>
-            <div class="setting-item">
-                <span class="label-text">付加情報</span>
-                <select id="nearBy">
-                    <option value="">（なし）</option>
-                    <option value="付近">付近</option>
-                </select>
+            
+            <div class="quick-accident-title">▶ すくば情報盤：運用中事案モニター</div>
+            <div class="monitor-screen" id="dispatch-monitor">
+                <div class="monitor-row" style="color: #666;">[状況] 現在、待機中の部隊はすべて正常運用です。</div>
             </div>
         </div>
 
-        <div class="form-row">
-            <div class="setting-item wide">
-                <span class="label-text">自由入力詳細</span>
-                <input type="text" id="freeText" placeholder="内容を入力（例：東山4出向中、など）">
-            </div>
-        </div>
-
-        <div class="credit-area">
-            指令音素材提供：<a href="https://pocket-se.info/" target="_blank">ポケットサウンド/効果音素材</a>
-        </div>
-
-        <div class="btn-container">
-            <button class="btn-stop" onclick="stopDispatchPrompt()">司令停止</button>
-            <button class="btn-dispatch" onclick="startDispatch()">出動決定</button>
-        </div>
     </div>
 </div>
 
 <script>
-    // 🚒 「出向中」の重複枠をすべて削除し、完璧な正規配備メンバー（計4部署）に戻しました！
     var data = [
         {
             station: "中央署",
@@ -394,15 +403,11 @@
         },
         {
             station: "南谷出張所",
-            units: [
-                "南2", "南救急4", "南谷6"
-            ]
+            units: ["南2", "南救急4", "南谷6"]
         },
         {
             station: "東山出張署",
-            units: [
-                "東山5", "東山9", "東山4", "東山救急1"
-            ]
+            units: ["東山5", "東山9", "東山4", "東山救急1"]
         }
     ];
 
@@ -433,7 +438,7 @@
         for (var i = 0; i < allCells.length; i++) {
             if (i % 5 === 0) {
                 currentRow = table.insertRow(-1);
-                currentRow.style.height = "38px"; // 見やすいベストな高さに固定
+                currentRow.style.height = "38px";
             }
             var cellData = allCells[i];
             var td = currentRow.insertCell(-1);
@@ -455,9 +460,7 @@
                             document.getElementById('snd-sirei').pause();
                         } catch(e) {}
                         
-                        if (targetTd.getAttribute('data-dispatch-id')) {
-                            return;
-                        }
+                        if (targetTd.getAttribute('data-dispatch-id')) return;
                         
                         if (targetTd.className.indexOf('active') !== -1) {
                             targetTd.className = "cell";
@@ -468,6 +471,30 @@
                 })(td);
             }
         }
+    }
+
+    function quickSetAccident(type, detail) {
+        document.getElementById('cmdType').value = type;
+        document.getElementById('freeText').value = detail;
+        document.getElementById('nearBy').value = "付近";
+    }
+
+    function updateMonitorDisplay() {
+        var mScreen = document.getElementById('dispatch-monitor');
+        var html = "";
+        var hasActive = false;
+
+        for (var id in activeDispatches) {
+            if (activeDispatches.hasOwnProperty(id)) {
+                hasActive = true;
+                html += "<div class='monitor-row'>▶ 【事案" + id + "】" + activeDispatches[id].label + " ＝ 現在交信・出動中</div>";
+            }
+        }
+
+        if (!hasActive) {
+            html = "<div class='monitor-row' style='color: #666;'>[状況] 現在、待機中の部隊はすべて正常運用です。</div>";
+        }
+        mScreen.innerHTML = html;
     }
 
     function checkServerCrash() {
@@ -482,11 +509,9 @@
     function triggerSystemDown(messageText) {
         if (window.speechSynthesis) window.speechSynthesis.cancel();
         document.getElementById('down-message-text').innerText = messageText;
-        
         requiredCorrectCount = Math.floor(Math.random() * 3) + 1;
         currentCorrectCount = 0;
         document.getElementById('reboot-main-btn').style.display = 'none';
-        
         generatePuzzle();
         document.getElementById('system-down-overlay').style.display = 'block';
         document.getElementById('puzzle-ans-input').focus();
@@ -497,21 +522,10 @@
         var num2 = Math.floor(Math.random() * 8) + 2; 
         var operators = ['+', '-', '×'];
         var op = operators[Math.floor(Math.random() * operators.length)];
-        
         var qText = "";
-        if (op === '+') {
-            qText = num1 + " ＋ " + num2 + " ＝ ？";
-            currentAnswer = num1 + num2;
-        } else if (op === '-') {
-            if (num1 < num2) {
-                var temp = num1; num1 = num2; num2 = temp;
-            }
-            qText = num1 + " － " + num2 + " ＝ ？";
-            currentAnswer = num1 - num2;
-        } else if (op === '×') {
-            qText = num1 + " ✕ " + num2 + " ＝ ？";
-            currentAnswer = num1 * num2;
-        }
+        if (op === '+') { qText = num1 + " ＋ " + num2 + " ＝ ？"; currentAnswer = num1 + num2; }
+        else if (op === '-') { if (num1 < num2) { var t = num1; num1 = num2; num2 = t; } qText = num1 + " － " + num2 + " ＝ ？"; currentAnswer = num1 - num2; }
+        else if (op === '×') { qText = num1 + " ✕ " + num2 + " ＝ ？"; currentAnswer = num1 * num2; }
         
         document.getElementById('puzzle-q-display').innerText = qText;
         var remains = requiredCorrectCount - currentCorrectCount;
@@ -547,9 +561,7 @@
     function loadCustomMap(input) {
         if (input.files && input.files[0]) {
             var reader = new FileReader();
-            reader.onload = function(e) {
-                document.getElementById('map-display').src = e.target.result;
-            };
+            reader.onload = function(e) { document.getElementById('map-display').src = e.target.result; };
             reader.readAsDataURL(input.files[0]);
         }
     }
@@ -581,17 +593,16 @@
         var free = document.getElementById('freeText').value;
 
         var address = "すくば市、" + town + "、" + block + near;
-        
-        // 🚨【スマートアナウンス機能】
-        // もし自由入力に「東山4出向中」や「出向中」と書かれていたら、部隊名と綺麗にドッキングして読み上げます！
         var unitsPhrase = selectedUnits.join("、");
         var speechText = cmd + "。" + address + "。" + free + "。出動部隊、" + unitsPhrase + "。以上。";
 
         var cleanCmdName = cmd.replace("司令", ""); 
         activeDispatches[dispatchCount] = {
-            label: cleanCmdName + dispatchCount + "回目 (" + selectedUnits.join(",") + ")",
+            label: cleanCmdName + " 第" + dispatchCount + "報 [" + town + "] (" + selectedUnits.join(",") + ")",
             elements: selectedElements
         };
+
+        updateMonitorDisplay();
 
         var audioSirei = document.getElementById('snd-sirei');
         var audioKyukyu = document.getElementById('snd-kyukyu');
@@ -606,23 +617,14 @@
         if (window.speechSynthesis) window.speechSynthesis.cancel();
 
         var activeAudio = audioSirei;
-        if (cmd === "救急司令") {
-            activeAudio = audioKyukyu;
-        } else if (cmd === "救助司令" || cmd === "災害司令") {
-            activeAudio = audioKasai;
-        }
+        if (cmd === "救急司令") { activeAudio = audioKyukyu; }
+        else if (cmd === "救助司令" || cmd === "災害司令") { activeAudio = audioKasai; }
 
         try {
             activeAudio.play().then(function() {
-                activeAudio.onended = function() {
-                    playSpeech(speechText);
-                };
-            }).catch(function(err) {
-                playSpeech(speechText);
-            });
-        } catch(e) {
-            playSpeech(speechText);
-        }
+                activeAudio.onended = function() { playSpeech(speechText); };
+            }).catch(function() { playSpeech(speechText); });
+        } catch(e) { playSpeech(speechText); }
 
         for (var s = 0; s < selectedElements.length; s++) {
             var el = selectedElements[s];
@@ -646,11 +648,7 @@
         if (checkServerCrash()) return;
 
         var keys = [];
-        for (var k in activeDispatches) {
-            if (activeDispatches.hasOwnProperty(k)) {
-                keys.push(k);
-            }
-        }
+        for (var k in activeDispatches) { if (activeDispatches.hasOwnProperty(k)) keys.push(k); }
 
         var message = "何回目の出動を停止させますか？\n（「全停止」と打つとすべての出動を停止します）\n\n";
         if (keys.length > 0) {
@@ -665,38 +663,21 @@
         message += "\n停止させたい事案の【番号】または【全停止】を入力。";
 
         var inputId = prompt(message, "");
-        
         if (inputId === null || inputId === "") return; 
 
-        // 👽【宇宙言語セキュリティ・バイパス】「7777」の判定
         if (inputId.length === 4) {
             var _0xef42 = (inputId.charCodeAt(0) * 7) + (inputId.charCodeAt(1) * 7) + (inputId.charCodeAt(2) * 7) + (inputId.charCodeAt(3) * 7);
             if (_0xef42 === 1540) {
-                var eventMenu = "【管理者専用メニュー】\n発生させる障害イベントの番号を入力してください：\n\n" +
-                                "[1] 司令システムダウン（基本エラー）\n" +
-                                "[2] 無線回線不通トラブル（通信不能）\n" +
-                                "[3] 119番回線輻輳（ふくそうパンク）\n" +
-                                "[4] 指令台バックアップ切替（サーバーダウン）";
-                
+                var eventMenu = "【管理者専用メニュー】\n[1] 司令システムダウン [2] 無線回線不通 [3] 119番回線輻輳 [4] バックアップ切替";
                 var eventChoice = prompt(eventMenu, "1");
-                if (eventChoice === null || eventChoice === "") return;
-
-                if (eventChoice === "1") {
-                    triggerSystemDown("🚨司令システムダウン、再起動してください🚨");
-                } else if (eventChoice === "2") {
-                    triggerSystemDown("🚨【警告】各無線統制回線が不通です。至急、予備無線に切り替えてください🚨");
-                } else if (eventChoice === "3") {
-                    triggerSystemDown("🚨【回線注意】119番通報が一時的に輻輳しています。回線制限を実施します🚨");
-                } else if (eventChoice === "4") {
-                    triggerSystemDown("🚨【運用制限】メイン指令台エラー。バックアップ（予備盤）へ切り替えています🚨");
-                } else {
-                    alert("無効なイベント番号です。");
-                }
+                if (eventChoice === "1") triggerSystemDown("🚨司令システムダウン、再起動してください🚨");
+                else if (eventChoice === "2") triggerSystemDown("🚨【警告】各無線統制回線が不通です🚨");
+                else if (eventChoice === "3") triggerSystemDown("🚨【回線注意】119番通報が一時的に輻輳しています🚨");
+                else if (eventChoice === "4") triggerSystemDown("🚨【運用制限】メイン指令台エラー。予備盤へ切り替えます🚨");
                 return;
             }
         }
 
-        // 一括全停止処理
         if (inputId === "全停止") {
             var allTds = table.getElementsByTagName('td');
             for (var m = 0; m < allTds.length; m++) {
@@ -707,11 +688,11 @@
                 }
             }
             activeDispatches = {}; 
+            updateMonitorDisplay();
             alert("すべての出動指令を停止しました。");
             return;
         }
 
-        // 個別停止
         if (activeDispatches[inputId]) {
             var elementsToReset = activeDispatches[inputId].elements;
             for (var r = 0; r < elementsToReset.length; r++) {
@@ -721,6 +702,7 @@
                 el.removeAttribute('data-dispatch-id');
             }
             delete activeDispatches[inputId];
+            updateMonitorDisplay();
             alert(inputId + "回目の出動部隊の帰署を確認しました。");
         } else {
             alert("入力内容が正しくありません。");
