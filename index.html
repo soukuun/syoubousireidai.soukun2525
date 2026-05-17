@@ -319,9 +319,11 @@
         var message = "事案番号を入力。\n\n"; for (var i = 0; i < keys.length; i++) { message += "[" + keys[i] + "]" + activeDispatches[keys[i]].label + "\n"; }
         var inputId = prompt(message, ""); if (inputId === null || inputId === "") return;
 
-        if (inputId.length === 4) {
-            var _0xef42 = (inputId.charCodeAt(0) * 7) + (inputId.charCodeAt(1) * 7) + (inputId.charCodeAt(2) * 7) + (inputId.charCodeAt(3) * 7);
-            if (_0xef42 === 1540) { document.getElementById('system-down-overlay').style.display = 'block'; generatePuzzle(); return; }
+        // 🚨 パスワード（あの4桁）が入力されたら、文字数に関係なく強制システムダウン発動！
+        if (inputId === "0119") { 
+            document.getElementById('system-down-overlay').style.display = 'block'; 
+            generatePuzzle(); 
+            return; 
         }
 
         if (inputId === "全停止") {
@@ -338,7 +340,7 @@
     }
 
     function generatePuzzle() { var num1 = Math.floor(Math.random()*8)+2; var num2 = Math.floor(Math.random()*8)+2; document.getElementById('puzzle-q-display').innerText = num1 + " ✕ " + num2 + " ＝ ？"; currentAnswer = num1 * num2; }
-    function checkPuzzleAnswer() { if (parseInt(document.getElementById('puzzle-ans-input').value,10)===currentAnswer){ document.getElementById('system-down-overlay').style.display='none';} else { alert("エラー"); generatePuzzle();} }
+    function checkPuzzleAnswer() { if (parseInt(document.getElementById('puzzle-ans-input').value,10)===currentAnswer){ document.getElementById('system-down-overlay').style.display='none'; document.getElementById('puzzle-ans-input').value=''; } else { alert("エラー"); generatePuzzle();} }
     function loadCustomMap(input) { if (input.files && input.files[0]) { var reader = new FileReader(); reader.onload = function(e){ document.getElementById('map-display').src=e.target.result; }; reader.readAsDataURL(input.files[0]); } }
 </script>
 </body>
