@@ -22,22 +22,6 @@
             padding-top: env(safe-area-inset-top);
         }
         
-        /* 全体コンテナ（通常時用） */
-        #main-app-container { display: block; }
-
-        /* 🚨 新設：文字入力エリアの超巨大全画面拡大モード（サブモニター用） */
-        #input-zoom-overlay {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: #111b29; color: #ffffff; z-index: 9999;
-            padding: 15px; box-sizing: border-box; overflow-y: auto;
-        }
-        #input-zoom-overlay .zoom-title { color: #ffff00; font-size: 18px; font-weight: bold; margin-bottom: 15px; text-align: center; border-bottom: 2px solid #ffff00; padding-bottom: 5px; }
-        #input-zoom-overlay .label-text { color: #a6c8ff; font-size: 16px; font-weight: bold; margin-bottom: 6px; display: block; }
-        #input-zoom-overlay select, #input-zoom-overlay input { font-size: 24px; padding: 12px; height: auto; background-color: #ffffff; color: #000000; border: 3px solid #4472c4; margin-bottom: 15px; border-radius: 6px; }
-        #input-zoom-overlay .btn-zoom-close { background-color: #555555; color: white; border: none; width: 100%; height: 50px; font-size: 16px; font-weight: bold; margin-top: 10px; border-radius: 6px; cursor: pointer; }
-        #input-zoom-overlay .btn-zoom-dispatch { background-color: #ff3333; color: white; border: none; width: 100%; height: 70px; font-size: 26px; font-weight: bold; border-radius: 6px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
-        #input-zoom-overlay .btn-zoom-dispatch:active { background-color: #cc0000; }
-
         /* 車両配置図 */
         .grid-table {
             width: 100%; border-collapse: separate; border-spacing: 2px;
@@ -93,14 +77,20 @@
         .info-label { background: #b4c6e7; padding: 3px 4px; font-weight: bold; width: 65px; text-align: center; border: 1px solid #8faadc; font-size: 10px; border-radius: 2px; }
         .info-val-box { background: white; border: 1px solid #a6a6a6; padding: 3px 4px; flex-grow: 1; font-weight: bold; font-size: 11px; min-height: 16px; border-radius: 2px; }
 
-        /* 入力エリア（通常時） */
+        /* 入力エリア */
         .form-row { margin-bottom: 6px; display: flex; gap: 6px; }
         .setting-item { flex: 1; }
         .label-text { font-size: 11px; font-weight: bold; color: #444; display: block; margin-bottom: 2px; }
         select, input { padding: 6px; font-size: 12px; font-weight: bold; border: 1px solid #a6a6a6; background: white; color: #000000; width: 100%; box-sizing: border-box; border-radius: 4px; -webkit-appearance: none; appearance: none; }
         
-        /* モード切替用特殊ボタン */
-        .btn-zoom-trigger { background-color: #e2efda; color: #375623; border: 1px solid #375623; width: 100%; height: 28px; font-size: 11px; font-weight: bold; margin-bottom: 6px; cursor: pointer; border-radius: 4px; }
+        /* ✍️ 空いたスペースに作った常設のクイック文字打ちエリア */
+        .quick-input-box {
+            background-color: #f8f9fa; border: 1px solid #95a5a6; padding: 6px; 
+            margin-bottom: 6px; border-radius: 4px; box-sizing: border-box;
+        }
+        .quick-input-box input {
+            font-size: 13px; padding: 6px; border: 2px solid #7f8c8d; background-color: #ffffff;
+        }
 
         /* ボタンエリア */
         .btn-container { width: 100%; display: flex; gap: 6px; margin-top: 4px; margin-bottom: 6px; }
@@ -161,166 +151,131 @@
     </div>
 </div>
 
-<div id="input-zoom-overlay">
-    <div class="zoom-title">すくば市消防本部 指令データ入力専用台</div>
-    
-    <label class="label-text">【司令区分】</label>
-    <select id="zoom-cmdType" onchange="syncZoomFields(this, 'cmdType')">
-        <option value="救急司令">救急司令</option>
-        <option value="火災司令">火災司令</option>
-        <option value="救助司令">救助司令</option>
-        <option value="災害司令">災害司令</option>
-    </select>
+<audio id="snd-sirei" src="sirei.mp3" preload="auto"></audio>
+<audio id="snd-kyukyu" src="kyukyu.mp3" preload="auto"></audio>
+<audio id="snd-kasai" src="kasaisirei.mp3" preload="auto"></audio>
 
-    <label class="label-text">【町名・場所】</label>
-    <select id="zoom-townName" onchange="syncZoomFields(this, 'townName'); syncDramaAddress();">
-        <option value="学園都市">学園都市</option>
-        <option value="すくば駅通り">すくば駅通り</option>
-        <option value="新都市中央通り">新都市中央通り</option>
-        <option value="学園都市駅通り">学園都市駅通り</option>
-        <option value="研究学園都市">研究学園都市</option>
-    </select>
+<table class="grid-table" id="grid-table"></table>
 
-    <label class="label-text">【丁目・付加】</label>
-    <select id="zoom-blockNum" onchange="syncZoomFields(this, 'blockNum'); syncDramaAddress();">
-        <option value="付近">付近</option>
-        <option value="一丁目付近">一丁目付近</option>
-        <option value="二丁目付近">二丁目付近</option>
-        <option value="三丁目付近">三丁目付近</option>
-    </select>
+<div class="lower-container">
+    <div class="map-area">
+        <img id="map-display" src="https://cyberjapandata.gsi.go.jp/xyz/std/12/3638/1614.png" alt="地図" class="map-img">
+        <label class="map-controls">地図選択<input type="file" style="display:none;" onchange="loadCustomMap(this)"></label>
+    </div>
 
-    <label class="label-text">【自由入力詳細】</label>
-    <input type="text" id="zoom-freeText" placeholder="例：東山4出向中" oninput="syncZoomFields(this, 'freeText')">
+    <div class="memo-pad-area">
+        <div class="memo-title-bar">
+            <span class="memo-title">✍️ 現場指揮・入電聴取リアルタイム手書きメモ</span>
+            <button class="btn-clear-memo" onclick="clearMemoCanvas()">全消去</button>
+        </div>
+        <canvas id="memo-canvas"></canvas>
+    </div>
 
-    <button class="btn-zoom-dispatch" onclick="startDispatch()">🚨 この内容で出動決定 🚨</button>
-    <button class="btn-zoom-close" onclick="toggleZoomMode(false)">🔙 通常表示に戻す</button>
-</div>
-
-
-<div id="main-app-container">
-    <audio id="snd-sirei" src="sirei.mp3" preload="auto"></audio>
-    <audio id="snd-kyukyu" src="kyukyu.mp3" preload="auto"></audio>
-    <audio id="snd-kasai" src="kasaisirei.mp3" preload="auto"></audio>
-
-    <table class="grid-table" id="grid-table"></table>
-
-    <div class="lower-container">
-        <div class="map-area">
-            <img id="map-display" src="https://cyberjapandata.gsi.go.jp/xyz/std/12/3638/1614.png" alt="地図" class="map-img">
-            <label class="map-controls">地図選択<input type="file" style="display:none;" onchange="loadCustomMap(this)"></label>
+    <div class="controls-panel">
+        <div class="caller-info-bar">
+            <div class="info-input-row">
+                <div class="info-label">通報者</div>
+                <div class="info-val-box">共同通信・一般入電</div>
+                <div class="info-label" style="width:50px;">状態</div>
+                <div class="info-val-box" style="width:50px; color:#0070c0; flex-grow:0; text-align:center;">接続</div>
+            </div>
+            <div class="info-input-row">
+                <div class="info-label">通報住所</div>
+                <div class="info-val-box" id="live-address-display">すくば市学園都市 付近</div>
+            </div>
+            <div class="info-input-row" style="margin-bottom:0;">
+                <div class="info-label">方式等</div>
+                <div class="info-val-box" style="color:#bf9000;">携帯電話 誤差範囲80m</div>
+            </div>
         </div>
 
-        <div class="memo-pad-area">
-            <div class="memo-title-bar">
-                <span class="memo-title">✍️ 現場指揮・入電聴取リアルタイム手書きメモ</span>
-                <button class="btn-clear-memo" onclick="clearMemoCanvas()">全消去</button>
+        <div>
+            <div class="quick-input-box">
+                <span class="label-text" style="color:#2c3e50;">✍️ 現場特記・臨時メモ（ここに入力した文字もアナウンスされます）</span>
+                <input type="text" id="quickMemoText" placeholder="例：東山4は付近で待機中 / 傷病者1名追加の模様">
             </div>
-            <canvas id="memo-canvas"></canvas>
+
+            <div class="form-row">
+                <div class="setting-item">
+                    <span class="label-text">司令区分</span>
+                    <select id="cmdType">
+                        <option value="救急司令">救急司令</option>
+                        <option value="火災司令">火災司令</option>
+                        <option value="救助司令">救助司令</option>
+                        <option value="災害司令">災害司令</option>
+                    </select>
+                </div>
+                <div class="setting-item">
+                    <span class="label-text">町名・場所</span>
+                    <select id="townName" onchange="syncDramaAddress()">
+                        <option value="学園都市">学園都市</option>
+                        <option value="すくば駅通り">すくば駅通り</option>
+                        <option value="新都市中央通り">新都市中央通り</option>
+                        <option value="学園都市駅通り">学園都市駅通り</option>
+                        <option value="研究学園都市">研究学園都市</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="setting-item">
+                    <span class="label-text">丁目・付加</span>
+                    <select id="blockNum" onchange="syncDramaAddress()">
+                        <option value="付近">付近</option>
+                        <option value="一丁目付近">一丁目付近</option>
+                        <option value="二丁目付近">二丁目付近</option>
+                        <option value="三丁目付近">三丁目付近</option>
+                    </select>
+                </div>
+                <div class="setting-item">
+                    <span class="label-text">自由入力詳細</span>
+                    <input type="text" id="freeText" placeholder="内容（例：東山4出向中）">
+                </div>
+            </div>
+
+            <div class="btn-container">
+                <button class="btn-stop" onclick="stopDispatchPrompt()">停止</button>
+                <button class="btn-dispatch" onclick="startDispatch()">出動決定</button>
+            </div>
         </div>
 
-        <div class="controls-panel">
-            <div class="caller-info-bar">
-                <div class="info-input-row">
-                    <div class="info-label">通報者</div>
-                    <div class="info-val-box">共同通信・一般入電</div>
-                    <div class="info-label" style="width:50px;">状態</div>
-                    <div class="info-val-box" style="width:50px; color:#0070c0; flex-grow:0; text-align:center;">接続</div>
-                </div>
-                <div class="info-input-row">
-                    <div class="info-label">通報住所</div>
-                    <div class="info-val-box" id="live-address-display">すくば市学園都市 付近</div>
-                </div>
-                <div class="info-input-row" style="margin-bottom:0;">
-                    <div class="info-label">方式等</div>
-                    <div class="info-val-box" style="color:#bf9000;">携帯電話 誤差範囲80m</div>
-                </div>
+        <div class="bottom-sub-panel">
+            <div class="drama-section-title">種別 － 1</div>
+            
+            <div class="category-group">
+                <div class="cat-label-inline">救急カテゴリー</div>
+                <button class="btn-cat selected" id="cat-ap" onclick="selectCategory('A+')">A+</button>
+                <button class="btn-cat" id="cat-a" onclick="selectCategory('A')">A</button>
+                <button class="btn-cat" id="cat-b" onclick="selectCategory('B')">B</button>
             </div>
 
-            <div>
-                <button class="btn-zoom-trigger" onclick="toggleZoomMode(true)">🖥️ 入力画面を全画面拡大表示（サブモニター用）</button>
-
-                <div class="form-row">
-                    <div class="setting-item">
-                        <span class="label-text">司令区分</span>
-                        <select id="cmdType" onchange="syncZoomFields(this, 'zoom-cmdType')">
-                            <option value="救急司令">救急司令</option>
-                            <option value="火災司令">火災司令</option>
-                            <option value="救助司令">救助司令</option>
-                            <option value="災害司令">災害司令</option>
-                        </select>
-                    </div>
-                    <div class="setting-item">
-                        <span class="label-text">町名・場所</span>
-                        <select id="townName" onchange="syncZoomFields(this, 'zoom-townName'); syncDramaAddress();">
-                            <option value="学園都市">学園都市</option>
-                            <option value="すくば駅通り">すくば駅通り</option>
-                            <option value="新都市中央通り">新都市中央通り</option>
-                            <option value="学園都市駅通り">学園都市駅通り</option>
-                            <option value="研究学園都市">研究学園都市</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="setting-item">
-                        <span class="label-text">丁目・付加</span>
-                        <select id="blockNum" onchange="syncZoomFields(this, 'zoom-blockNum'); syncDramaAddress();">
-                            <option value="付近">付近</option>
-                            <option value="一丁目付近">一丁目付近</option>
-                            <option value="二丁目付近">二丁目付近</option>
-                            <option value="三丁目付近">三丁目付近</option>
-                        </select>
-                    </div>
-                    <div class="setting-item">
-                        <span class="label-text">自由入力詳細</span>
-                        <input type="text" id="freeText" placeholder="内容（例：東山4出向中）" oninput="syncZoomFields(this, 'zoom-freeText')">
-                    </div>
-                </div>
-
-                <div class="btn-container">
-                    <button class="btn-stop" onclick="stopDispatchPrompt()">停止</button>
-                    <button class="btn-dispatch" onclick="startDispatch()">出動決定</button>
-                </div>
+            <div class="drama-sub-title">救急</div>
+            
+            <div class="factor-grid">
+                <button class="btn-factor" onclick="setFactor('救急司令', '急病通報、対象者意識朦朧の模様')">急病</button>
+                <button class="btn-factor" onclick="setFactor('救急司令', '労働災害事故、機械に挟まれ負傷模様')">労働災害</button>
+                <button class="btn-factor" onclick="setFactor('救急司令', '医師運搬要請、医療資器材同乗搬送')">医師運搬</button>
+                
+                <button class="btn-factor" onclick="setFactor('救急司令', '交通事故、複数名負傷の模様')">交通事象</button>
+                <button class="btn-factor" onclick="setFactor('救急司令', '運動競技中の事故、負傷者1名模様')">運動競技</button>
+                <button class="btn-factor" onclick="setFactor('救急司令', '救急資器材搬送、現場へ急行')">資器材</button>
+                
+                <button class="btn-factor" onclick="setFactor('救急司令', '一般負傷、高所からの転落の模様')">一般負傷</button>
+                <button class="btn-factor" onclick="setFactor('救急司令', '転院搬送依頼、医師同乗にて病院間搬送')">転院</button>
+                <button class="btn-factor" onclick="setFactor('救急司令', '加害（暴行）事案、対象者出血の模様')">加害</button>
+                
+                <button class="btn-factor fire-factor" onclick="setFactor('火災司令', '建物火災通報、黒煙噴出中')">建物火災</button>
+                <button class="btn-factor fire-factor" onclick="setFactor('救助司令', '一般救助出動、要救助者あり')">一般救助</button>
+                <button class="btn-factor fire-factor" onclick="setFactor('災害司令', 'その他の災害出動、現着確認せよ')">その他災害</button>
             </div>
 
-            <div class="bottom-sub-panel">
-                <div class="drama-section-title">種別 － 1</div>
-                
-                <div class="category-group">
-                    <div class="cat-label-inline">救急カテゴリー</div>
-                    <button class="btn-cat selected" id="cat-ap" onclick="selectCategory('A+')">A+</button>
-                    <button class="btn-cat" id="cat-a" onclick="selectCategory('A')">A</button>
-                    <button class="btn-cat" id="cat-b" onclick="selectCategory('B')">B</button>
-                </div>
+            <div class="dispatch-monitor-screen" id="dispatch-monitor">
+                <div class="monitor-row" style="color: #666; font-size:11px;">[状況] 全部隊正常待機中。</div>
+            </div>
 
-                <div class="drama-sub-title">救急</div>
-                
-                <div class="factor-grid">
-                    <button class="btn-factor" onclick="setFactor('救急司令', '急病通報、対象者意識朦朧の模様')">急病</button>
-                    <button class="btn-factor" onclick="setFactor('救急司令', '労働災害事故、機械に挟まれ負傷模様')">労働災害</button>
-                    <button class="btn-factor" onclick="setFactor('救急司令', '医師運搬要請、医療資器材同乗搬送')">医師運搬</button>
-                    
-                    <button class="btn-factor" onclick="setFactor('救急司令', '交通事故、複数名負傷の模様')">交通事象</button>
-                    <button class="btn-factor" onclick="setFactor('救急司令', '運動競技中の事故、負傷者1名模様')">運動競技</button>
-                    <button class="btn-factor" onclick="setFactor('救急司令', '救急資器材搬送、現場へ急行')">資器材</button>
-                    
-                    <button class="btn-factor" onclick="setFactor('救急司令', '一般負傷、高所からの転落の模様')">一般負傷</button>
-                    <button class="btn-factor" onclick="setFactor('救急司令', '転院搬送依頼、医師同乗にて病院間搬送')">転院</button>
-                    <button class="btn-factor" onclick="setFactor('救急司令', '加害（暴行）事案、対象者出血の模様')">加害</button>
-                    
-                    <button class="btn-factor fire-factor" onclick="setFactor('火災司令', '建物火災通報、黒煙噴出中')">建物火災</button>
-                    <button class="btn-factor fire-factor" onclick="setFactor('救助司令', '一般救助出動、要救助者あり')">一般救助</button>
-                    <button class="btn-factor fire-factor" onclick="setFactor('災害司令', 'その他の災害出動、現着確認せよ')">その他災害</button>
-                </div>
-
-                <div class="dispatch-monitor-screen" id="dispatch-monitor">
-                    <div class="monitor-row" style="color: #666; font-size:11px;">[状況] 全部隊正常待機中。</div>
-                </div>
-
-                <div class="weather-monitor-screen">
-                    <span>すくば市消防本部</span>
-                    <span>晴れ / 北西2m / 40%【乾燥注意】</span>
-                </div>
+            <div class="weather-monitor-screen">
+                <span>すくば市消防本部</span>
+                <span>晴れ / 北西2m / 40%【乾燥注意】</span>
             </div>
         </div>
     </div>
@@ -353,24 +308,7 @@
         }
     }
 
-    // 🖥️ 新設：拡大モードと通常モードの表示切り替え関数
-    function toggleZoomMode(showZoom) {
-        if(showZoom) {
-            document.getElementById('main-app-container').style.display = 'none';
-            document.getElementById('input-zoom-overlay').style.display = 'block';
-        } else {
-            document.getElementById('main-app-container').style.display = 'block';
-            document.getElementById('input-zoom-overlay').style.display = 'none';
-            setTimeout(initCanvasSize, 50); // メモ帳のサイズ再計算
-        }
-    }
-
-    // 🖥️ 新設：通常入力と拡大入力の文字を常にリアルタイム連動させる関数
-    function syncZoomFields(source, targetId) {
-        document.getElementById(targetId).value = source.value;
-    }
-
-    // 手書きキャンバス
+    // 手書きキャンバスの制御スクリプト
     var canvas = document.getElementById('memo-canvas');
     var ctx = canvas.getContext('2d');
     var isDrawing = false;
@@ -378,8 +316,8 @@
     function initCanvasSize() {
         canvas.width = canvas.clientWidth;
         canvas.height = canvas.clientHeight;
-        ctx.strokeStyle = '#00ff00';
-        ctx.lineWidth = 2.5;
+        ctx.strokeStyle = '#00ff00'; 
+        ctx.lineWidth = 2.5;         
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
     }
@@ -421,12 +359,7 @@
         if(cat === "B") document.getElementById('cat-b').classList.add('selected');
     }
     
-    function setFactor(type, detail) { 
-        document.getElementById('cmdType').value = type; 
-        document.getElementById('zoom-cmdType').value = type;
-        document.getElementById('freeText').value = detail; 
-        document.getElementById('zoom-freeText').value = detail;
-    }
+    function setFactor(type, detail) { document.getElementById('cmdType').value = type; document.getElementById('freeText').value = detail; }
     function formatTime(seconds) { var m = Math.floor(seconds / 60); var s = seconds % 60; return (m < 10 ? "0" + m : m) + ":" + (s < 10 ? "0" + s : s); }
     function setUnitArrived(id) { if (activeDispatches[id]) { activeDispatches[id].isArrived = true; updateMonitorDisplay(); } }
     
@@ -464,8 +397,17 @@
         dispatchCount++; var dispatchColor = colorList[(dispatchCount - 1) % 4];
         var cmd = document.getElementById('cmdType').value; var town = document.getElementById('townName').value;
         var block = document.getElementById('blockNum').value; var free = document.getElementById('freeText').value;
+        
+        // ✍️ 常設メモに入力された文字を取得
+        var quickMemo = document.getElementById('quickMemoText').value;
 
-        var speechText = "カテゴリー" + currentCategory + "。" + cmd + "。" + town + "、" + block + "。" + free + "。出動部隊、" + selectedUnits.join("、") + "。以上。";
+        // 音声合成用のテキスト（常設メモがあればそれも合体させる）
+        var speechText = "カテゴリー" + currentCategory + "。" + cmd + "。" + town + "、" + block + "。" + free + "。";
+        if (quickMemo !== "") {
+            speechText += quickMemo + "。";
+        }
+        speechText += "出動部隊、" + selectedUnits.join("、") + "。以上。";
+
         activeDispatches[dispatchCount] = { label: "-[" + currentCategory + " " + town + "]", elements: selectedElements, seconds: 0, isArrived: false };
 
         updateMonitorDisplay(); startGlobalTimerLoop();
@@ -484,9 +426,6 @@
         }
 
         for (var s = 0; s < selectedElements.length; s++) { var el = selectedElements[s]; el.className = "cell"; el.style.backgroundColor = dispatchColor; el.style.color = '#ffffff'; el.setAttribute('data-dispatch-id', dispatchCount); }
-        
-        // 拡大モード中に出動したら自動で通常に戻す
-        toggleZoomMode(false);
     }
 
     function playSpeech(text) { if ('speechSynthesis' in window) { var uttr = new SpeechSynthesisUtterance(text); uttr.lang = 'ja-JP'; uttr.rate = 1.3; window.speechSynthesis.speak(uttr); } }
